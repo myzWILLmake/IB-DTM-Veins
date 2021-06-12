@@ -32,10 +32,28 @@ Define_Module(ib_dtm::ApplicationLayerTest);
 void ApplicationLayerTest::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
+    vehID = getParentModule()->getIndex();
+    vehRng = getRNG(0);
+
     if (stage == 0) {
         sentMessage = false;
         lastDroveAt = simTime();
         currentSubscribedServiceId = -1;
+    }
+
+    if (traci) {
+        auto roadlist = traci->getRoadIds();
+        std::vector<std::string> roadvec;
+        for (auto& road : roadlist) {
+            if (road.find(":") == std::string::npos) {
+                roadvec.push_back(road);
+            }
+        }
+        auto target = roadvec[vehRng->intRand(roadvec.size())];
+        if (traciVehicle) {
+            traciVehicle->changeTarget(target);
+            EV_DEBUG << "Vehicle " << vehID << " change target to " << target << endl;
+        }
     }
 }
 
@@ -93,28 +111,28 @@ void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
     // stopped for for at least 10s?
-    if (mobility->getSpeed() < 1) {
-        if (simTime() - lastDroveAt >= 10 && sentMessage == false) {
-            findHost()->getDisplayString().setTagArg("i", 1, "red");
-            sentMessage = true;
-
-            ApplicationLayerTestMessage* wsm = new ApplicationLayerTestMessage();
-            populateWSM(wsm);
-            wsm->setDemoData(mobility->getRoadId().c_str());
-
-            // host is standing still due to crash
-            if (dataOnSch) {
-                startService(Channel::sch2, 42, "Traffic Information Service");
-                // started service and server advertising, schedule message to self to send later
-                scheduleAt(computeAsynchronousSendingTime(1, ChannelType::service), wsm);
-            }
-            else {
-                // send right away on CCH, because channel switching is disabled
-                sendDown(wsm);
-            }
-        }
-    }
-    else {
-        lastDroveAt = simTime();
-    }
+//    if (mobility->getSpeed() < 1) {
+//        if (simTime() - lastDroveAt >= 10 && sentMessage == false) {
+//            findHost()->getDisplayString().setTagArg("i", 1, "red");
+//            sentMessage = true;
+//
+//            ApplicationLayerTestMessage* wsm = new ApplicationLayerTestMessage();
+//            populateWSM(wsm);
+//            wsm->setDemoData(mobility->getRoadId().c_str());
+//
+//            // host is standing still due to crash
+//            if (dataOnSch) {
+//                startService(Channel::sch2, 42, "Traffic Information Service");
+//                // started service and server advertising, schedule message to self to send later
+//                scheduleAt(computeAsynchronousSendingTime(1, ChannelType::service), wsm);
+//            }
+//            else {
+//                // send right away on CCH, because channel switching is disabled
+//                sendDown(wsm);
+//            }
+//        }
+//    }
+//    else {
+//        lastDroveAt = simTime();
+//    }
 }

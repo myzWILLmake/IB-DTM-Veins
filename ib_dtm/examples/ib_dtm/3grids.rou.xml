@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- generated on 2021-01-18 10:13:10.601917 by $Id$ UNKNOWN
+  options: -n 3*3.net.xml -o 3*3.rou.xml -e 1 <doubleminus>flow=20 <doubleminus>trip-attributes departPos="random"
+-->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <flow id="0" begin="0" end="1" period="20" from="gneE14" to="-gneE1" departPos="random"/>
+    <flow id="1" begin="0" end="1" period="20" from="-gneE20" to="-gneE18" departPos="random"/>
+    <flow id="2" begin="0" end="1" period="20" from="gneE19" to="gneE16" departPos="random"/>
+    <flow id="3" begin="0" end="1" period="20" from="gneE4" to="-gneE12" departPos="random"/>
+    <flow id="4" begin="0" end="1" period="20" from="-gneE6" to="-gneE1" departPos="random"/>
+    <flow id="5" begin="0" end="1" period="20" from="-gneE18" to="gneE0" departPos="random"/>
+    <flow id="6" begin="0" end="1" period="20" from="-gneE1" to="-gneE17" departPos="random"/>
+    <flow id="7" begin="0" end="1" period="20" from="gneE15" to="gneE10" departPos="random"/>
+    <flow id="8" begin="0" end="1" period="20" from="-gneE18" to="gneE12" departPos="random"/>
+    <flow id="9" begin="0" end="1" period="20" from="gneE22" to="-gneE0" departPos="random"/>
+    <flow id="10" begin="0" end="1" period="20" from="gneE22" to="gneE17" departPos="random"/>
+    <flow id="11" begin="0" end="1" period="20" from="-gneE24" to="-gneE15" departPos="random"/>
+    <flow id="12" begin="0" end="1" period="20" from="gneE7" to="-gneE24" departPos="random"/>
+    <flow id="13" begin="0" end="1" period="20" from="-gneE12" to="-gneE12" departPos="random"/>
+    <flow id="14" begin="0" end="1" period="20" from="gneE24" to="gneE12" departPos="random"/>
+    <flow id="15" begin="0" end="1" period="20" from="gneE22" to="gneE19" departPos="random"/>
+    <flow id="16" begin="0" end="1" period="20" from="gneE1" to="gneE8" departPos="random"/>
+    <flow id="17" begin="0" end="1" period="20" from="-gneE4" to="gneE10" departPos="random"/>
+    <flow id="18" begin="0" end="1" period="20" from="gneE23" to="gneE13" departPos="random"/>
+    <flow id="19" begin="0" end="1" period="20" from="gneE3" to="gneE11" departPos="random"/>
+</routes>

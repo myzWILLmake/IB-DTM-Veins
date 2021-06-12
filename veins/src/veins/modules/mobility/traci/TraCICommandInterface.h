@@ -154,6 +154,7 @@ public:
         int32_t getLaneIndex();
         std::string getTypeId();
         bool changeVehicleRoute(const std::list<std::string>& roads);
+        bool changeTarget(const std::string& roadId);
         double getLength();
         double getWidth();
         double getHeight();

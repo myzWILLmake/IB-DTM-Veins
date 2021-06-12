@@ -50,6 +50,8 @@ protected:
     simtime_t lastDroveAt;
     bool sentMessage;
     int currentSubscribedServiceId;
+    cRNG* vehRng;
+    int vehID;
 
 protected:
     void onWSM(veins::BaseFrame1609_4* wsm) override;

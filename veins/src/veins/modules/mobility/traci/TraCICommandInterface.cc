@@ -1068,6 +1068,16 @@ bool TraCICommandInterface::Vehicle::changeVehicleRoute(const std::list<std::str
     return true;
 }
 
+bool TraCICommandInterface::Vehicle::changeTarget(const std::string& roadId) {
+    uint8_t variableId = CMD_CHANGETARGET;
+    uint8_t variableType = TYPE_STRING;
+    TraCIBuffer buf;
+    buf << variableId << nodeId << variableType << roadId;
+    TraCIBuffer obuf = connection->query(CMD_SET_VEHICLE_VARIABLE, buf);
+    ASSERT(obuf.eof());
+    return true;
+}
+
 void TraCICommandInterface::Vehicle::setParameter(const std::string& parameter, int value)
 {
     std::stringstream strValue;
