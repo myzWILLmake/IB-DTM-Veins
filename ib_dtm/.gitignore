@@ -2,8 +2,8 @@ src/Makefile
 src/*.so
 src/*.dll
 src/*.dylib
-src/**/*_m.h
-src/**/*_m.cc
+# src/**/*_m.h
+# src/**/*_m.cc
 
 doc/doxy
 doc/neddoc
