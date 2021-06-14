@@ -25,6 +25,10 @@ import org.car2x.veins.modules.application.ieee80211p.DemoBaseApplLayer;
 
 simple ApplicationLayerTest extends DemoBaseApplLayer
 {
-    @class(ib_dtm::ApplicationLayerTest);
-    @display("i=block/app2");
+    parameters:
+		@class(ib_dtm::ApplicationLayerTest);
+ 		@display("i=block/app2");
+ 		int vehTotalNum = default(20);
+ 		int maliciousNum = default(1);
+        
 }

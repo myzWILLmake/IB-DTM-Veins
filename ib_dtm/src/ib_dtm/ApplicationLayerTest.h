@@ -48,10 +48,19 @@ public:
 
 protected:
     simtime_t lastDroveAt;
+    int nextInterval;
     bool sentMessage;
     int currentSubscribedServiceId;
     cRNG* vehRng;
     int vehID;
+
+    // malicious
+    int vehTotalNum;
+    int maliciousNum;
+    bool isMalicious;
+
+    // message
+    int msgSerialNo;
 
 protected:
     void onWSM(veins::BaseFrame1609_4* wsm) override;

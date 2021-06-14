@@ -34,6 +34,7 @@ void ApplicationLayerTest::initialize(int stage)
     DemoBaseApplLayer::initialize(stage);
     vehID = getParentModule()->getIndex();
     vehRng = getRNG(0);
+    nextInterval = 5 + vehRng->intRand(10);
 
     if (stage == 0) {
         sentMessage = false;
@@ -55,18 +56,24 @@ void ApplicationLayerTest::initialize(int stage)
             EV_DEBUG << "Vehicle " << vehID << " change target to " << target << endl;
         }
     }
+
+    vehTotalNum = par("vehTotalNum");
+    maliciousNum = par("maliciousNum");
+    isMalicious = vehID % vehTotalNum < maliciousNum;
+
+    msgSerialNo = 0;
 }
 
 void ApplicationLayerTest::onWSA(DemoServiceAdvertisment* wsa)
 {
-    if (currentSubscribedServiceId == -1) {
-        mac->changeServiceChannel(static_cast<Channel>(wsa->getTargetChannel()));
-        currentSubscribedServiceId = wsa->getPsid();
-        if (currentOfferedServiceId != wsa->getPsid()) {
-            stopService();
-            startService(static_cast<Channel>(wsa->getTargetChannel()), wsa->getPsid(), "Mirrored Traffic Service");
-        }
-    }
+//    if (currentSubscribedServiceId == -1) {
+//        mac->changeServiceChannel(static_cast<Channel>(wsa->getTargetChannel()));
+//        currentSubscribedServiceId = wsa->getPsid();
+//        if (currentOfferedServiceId != wsa->getPsid()) {
+//            stopService();
+//            startService(static_cast<Channel>(wsa->getTargetChannel()), wsa->getPsid(), "Mirrored Traffic Service");
+//        }
+//    }
 }
 
 void ApplicationLayerTest::onWSM(BaseFrame1609_4* frame)
@@ -75,14 +82,20 @@ void ApplicationLayerTest::onWSM(BaseFrame1609_4* frame)
 
     findHost()->getDisplayString().setTagArg("i", 1, "green");
 
-    if (mobility->getRoadId()[0] != ':') traciVehicle->changeRoute(wsm->getDemoData(), 9999);
-    if (!sentMessage) {
-        sentMessage = true;
-        // repeat the received traffic update once in 2 seconds plus some random delay
-        wsm->setSenderAddress(myId);
-        wsm->setSerial(3);
-        scheduleAt(simTime() + 2 + uniform(0.01, 0.2), wsm->dup());
-    }
+    int serial = wsm->getSerial();
+    int sender = wsm->getSender();
+    bool isMalicious = wsm->getIsMalicious();
+
+    EV_DEBUG << "Vehicle ["<< vehID << "] received msg " << serial <<" from [" << sender << "]" << endl;
+//
+//    if (mobility->getRoadId()[0] != ':') traciVehicle->changeRoute(wsm->getDemoData(), 9999);
+//    if (!sentMessage) {
+//        sentMessage = true;
+//        // repeat the received traffic update once in 2 seconds plus some random delay
+//        wsm->setSenderAddress(myId);
+//        wsm->setSerial(3);
+//        scheduleAt(simTime() + 2 + uniform(0.01, 0.2), wsm->dup());
+//    }
 }
 
 void ApplicationLayerTest::handleSelfMsg(cMessage* msg)
@@ -110,6 +123,19 @@ void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
 {
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
+    if (simTime() - lastDroveAt >= nextInterval) {
+        findHost()->getDisplayString().setTagArg("i", 1, "red");
+        
+        this->msgSerialNo++;
+        ApplicationLayerTestMessage* wsm = new ApplicationLayerTestMessage();
+        populateWSM(wsm);
+        wsm->setSerial(this->msgSerialNo);
+        wsm->setSender(this->vehID);
+        wsm->setIsMalicious(this->isMalicious);
+        sendDown(wsm);
+        lastDroveAt = simTime();
+        nextInterval = 5 + vehRng->intRand(10);
+    }
     // stopped for for at least 10s?
 //    if (mobility->getSpeed() < 1) {
 //        if (simTime() - lastDroveAt >= 10 && sentMessage == false) {
