@@ -35,7 +35,10 @@ class veins::LAddress::L2Type extends void;
 packet ApplicationLayerTestMessage extends BaseFrame1609_4 {
 //    string demoData;
 //    veins::LAddress::L2Type senderAddress = -1;
+	int msgType = 0;
     int serial = 0;
     int sender = 0;
     bool isMalicious = false;
+    bool isAck = false;
+    string eventData;
 }

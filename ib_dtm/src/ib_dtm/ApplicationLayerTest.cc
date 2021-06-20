@@ -26,20 +26,32 @@
 
 using namespace veins;
 using namespace ib_dtm;
+using namespace std;
 
 Define_Module(ib_dtm::ApplicationLayerTest);
 
 void ApplicationLayerTest::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
-    vehID = getParentModule()->getIndex();
-    vehRng = getRNG(0);
-    nextInterval = 5 + vehRng->intRand(10);
 
     if (stage == 0) {
         sentMessage = false;
         lastDroveAt = simTime();
+        lastSentRSU = simTime();
         currentSubscribedServiceId = -1;
+
+        vehID = getParentModule()->getIndex();
+        vehRng = getRNG(0);
+        nextInterval = 5 + vehRng->intRand(10);
+
+        vehTotalNum = par("vehTotalNum");
+        maliciousNum = par("maliciousNum");
+        isMalicious = vehID % vehTotalNum < maliciousNum;
+        if (isMalicious) {
+            findHost()->getDisplayString().setTagArg("i", 1, "red");
+        }
+
+        msgSerialNo = 0;
     }
 
     if (traci) {
@@ -56,16 +68,56 @@ void ApplicationLayerTest::initialize(int stage)
             EV_DEBUG << "Vehicle " << vehID << " change target to " << target << endl;
         }
     }
+}
 
-    vehTotalNum = par("vehTotalNum");
-    maliciousNum = par("maliciousNum");
-    isMalicious = vehID % vehTotalNum < maliciousNum;
+void ApplicationLayerTest::recordBeaconMsg(int sender, bool isMaliciousMsg) {
+    if (recordData.find(sender) == recordData.end()) {
+        recordData[sender] = isMaliciousMsg;
+    } else {
+        recordData[sender] = recordData[sender] && isMaliciousMsg;
+    }
+}
 
-    msgSerialNo = 0;
+string ApplicationLayerTest::encodeEventData() {
+    // encode trust events to string
+    string data = "";
+    vector<int> positiveIDs;
+    vector<int> negativeIDs;
+    for (auto& p : recordData) {
+        if (!p.second) {
+            positiveIDs.push_back(p.first);
+        } else {
+            negativeIDs.push_back(p.first);
+        }
+    }
+    for (int i=0; i<positiveIDs.size(); i++) {
+        data += to_string(positiveIDs[i]) + " ";
+    }
+    data += ";";
+    for (int i=0; i<negativeIDs.size(); i++) {
+        data += to_string(negativeIDs[i]) + " ";
+    }
+    return data;
 }
 
 void ApplicationLayerTest::onWSA(DemoServiceAdvertisment* wsa)
 {
+    int rsuID = wsa->getPsid();
+    EV << "VEH[" << vehID <<"] received RSU msg from RSU[" << rsuID << "]" << endl;
+    if (!recordData.empty()) {
+        lastSentRSU = simTime();
+        string eventData = encodeEventData();
+        recordData.clear();
+        ApplicationLayerTestMessage* newwsm = new ApplicationLayerTestMessage();
+        populateWSM(newwsm);
+        newwsm->setMsgType(APPLICATION_MSG_TYPE_RSU);
+        newwsm->setIsAck(true);
+        newwsm->setSerial(this->msgSerialNo++);
+        newwsm->setSender(this->vehID % vehTotalNum);
+        newwsm->setEventData(eventData.c_str());
+        sendDown(newwsm);
+    }
+
 //    if (currentSubscribedServiceId == -1) {
 //        mac->changeServiceChannel(static_cast<Channel>(wsa->getTargetChannel()));
 //        currentSubscribedServiceId = wsa->getPsid();
@@ -80,13 +132,32 @@ void ApplicationLayerTest::onWSM(BaseFrame1609_4* frame)
 {
     ApplicationLayerTestMessage* wsm = check_and_cast<ApplicationLayerTestMessage*>(frame);
 
-    findHost()->getDisplayString().setTagArg("i", 1, "green");
+    // findHost()->getDisplayString().setTagArg("i", 1, "green");
+    int msgType = wsm->getMsgType();
+    switch (msgType) {
+        case APPLICATION_MSG_TYPE_VEH: {
+            int serial = wsm->getSerial();
+            int sender = wsm->getSender();
+            if (sender != this->vehID % vehTotalNum) {
+                bool isMaliciousMsg = wsm->getIsMalicious();
+                if (isMaliciousMsg) {
+                    EV << "VEH["<< vehID % vehTotalNum << "] received MALICIOUS msg from VEH[" << sender << "]" << endl;
+                } else {
+                    EV << "VEH["<< vehID % vehTotalNum << "] received REAL msg from VEH[" << sender << "]" << endl;
+                }
+                
+                recordBeaconMsg(sender, isMaliciousMsg);
+            }
+            break;
+        }
+        case APPLICATION_MSG_TYPE_RSU: {
+            bool isAck = wsm->getIsAck();
+            if (isAck) return;
+            break;
+        }
+    }
 
-    int serial = wsm->getSerial();
-    int sender = wsm->getSender();
-    bool isMalicious = wsm->getIsMalicious();
 
-    EV_DEBUG << "Vehicle ["<< vehID << "] received msg " << serial <<" from [" << sender << "]" << endl;
 //
 //    if (mobility->getRoadId()[0] != ':') traciVehicle->changeRoute(wsm->getDemoData(), 9999);
 //    if (!sentMessage) {
@@ -100,23 +171,23 @@ void ApplicationLayerTest::onWSM(BaseFrame1609_4* frame)
 
 void ApplicationLayerTest::handleSelfMsg(cMessage* msg)
 {
-    if (ApplicationLayerTestMessage* wsm = dynamic_cast<ApplicationLayerTestMessage*>(msg)) {
-        // send this message on the service channel until the counter is 3 or higher.
-        // this code only runs when channel switching is enabled
-        sendDown(wsm->dup());
-        wsm->setSerial(wsm->getSerial() + 1);
-        if (wsm->getSerial() >= 3) {
-            // stop service advertisements
-            stopService();
-            delete (wsm);
-        }
-        else {
-            scheduleAt(simTime() + 1, wsm);
-        }
-    }
-    else {
-        DemoBaseApplLayer::handleSelfMsg(msg);
-    }
+    // if (ApplicationLayerTestMessage* wsm = dynamic_cast<ApplicationLayerTestMessage*>(msg)) {
+    //     // send this message on the service channel until the counter is 3 or higher.
+    //     // this code only runs when channel switching is enabled
+    //     sendDown(wsm->dup());
+    //     wsm->setSerial(wsm->getSerial() + 1);
+    //     if (wsm->getSerial() >= 3) {
+    //         // stop service advertisements
+    //         stopService();
+    //         delete (wsm);
+    //     }
+    //     else {
+    //         scheduleAt(simTime() + 1, wsm);
+    //     }
+    // }
+    // else {
+    //     DemoBaseApplLayer::handleSelfMsg(msg);
+    // }
 }
 
 void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
@@ -124,13 +195,14 @@ void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
     if (simTime() - lastDroveAt >= nextInterval) {
-        findHost()->getDisplayString().setTagArg("i", 1, "red");
+        // findHost()->getDisplayString().setTagArg("i", 1, "red");
         
         this->msgSerialNo++;
         ApplicationLayerTestMessage* wsm = new ApplicationLayerTestMessage();
         populateWSM(wsm);
+        wsm->setMsgType(APPLICATION_MSG_TYPE_VEH);
         wsm->setSerial(this->msgSerialNo);
-        wsm->setSender(this->vehID);
+        wsm->setSender(this->vehID % vehTotalNum);
         wsm->setIsMalicious(this->isMalicious);
         sendDown(wsm);
         lastDroveAt = simTime();

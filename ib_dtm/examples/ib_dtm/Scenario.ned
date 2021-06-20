@@ -21,10 +21,14 @@
 //
 
 package ib_dtm.examples.ib_dtm;
+import org.car2x.veins.nodes.RSU;
 import org.car2x.veins.modules.mobility.traci.TraCIVehicleInserter;
 
 network Scenario extends org.car2x.veins.nodes.Scenario
 {
     submodules:
-        inserter: TraCIVehicleInserter;
+        inserter: TraCIVehicleInserter {
+            @display("p=208,0");
+        }
+        rsu[1]: RSU;
 }

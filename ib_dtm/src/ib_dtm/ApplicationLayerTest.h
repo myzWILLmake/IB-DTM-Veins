@@ -28,26 +28,13 @@
 
 namespace ib_dtm {
 
-/**
- * @brief
- * A tutorial demo for TraCI. When the car is stopped for longer than 10 seconds
- * it will send a message out to other cars containing the blocked road id.
- * Receiving cars will then trigger a reroute via TraCI.
- * When channel switching between SCH and CCH is enabled on the MAC, the message is
- * instead send out on a service channel following a Service Advertisement
- * on the CCH.
- *
- * @author Christoph Sommer : initial DemoApp
- * @author David Eckhoff : rewriting, moving functionality to DemoBaseApplLayer, adding WSA
- *
- */
-
 class IB_DTM_API ApplicationLayerTest : public veins::DemoBaseApplLayer {
 public:
     void initialize(int stage) override;
 
 protected:
     simtime_t lastDroveAt;
+    simtime_t lastSentRSU;
     int nextInterval;
     bool sentMessage;
     int currentSubscribedServiceId;
@@ -62,7 +49,12 @@ protected:
     // message
     int msgSerialNo;
 
+    // record
+    std::map<int, bool> recordData;
 protected:
+    void recordBeaconMsg(int sender, bool isMaliciousMsg);
+    std::string encodeEventData();
+
     void onWSM(veins::BaseFrame1609_4* wsm) override;
     void onWSA(veins::DemoServiceAdvertisment* wsa) override;
 

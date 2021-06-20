@@ -43,3 +43,8 @@
 #else
 #define IB_DTM_API
 #endif
+
+namespace ib_dtm {
+    const int APPLICATION_MSG_TYPE_VEH = 0;
+    const int APPLICATION_MSG_TYPE_RSU = 1;
+}
