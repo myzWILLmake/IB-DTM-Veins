@@ -54,18 +54,20 @@ void ApplicationLayerTest::initialize(int stage)
         msgSerialNo = 0;
     }
 
-    if (traci) {
-        auto roadlist = traci->getRoadIds();
-        std::vector<std::string> roadvec;
-        for (auto& road : roadlist) {
-            if (road.find(":") == std::string::npos) {
-                roadvec.push_back(road);
+    if (stage == 1) {
+        if (traci) {
+            auto roadlist = traci->getRoadIds();
+            std::vector<std::string> roadvec;
+            for (auto& road : roadlist) {
+                if (road.find(":") == std::string::npos) {
+                    roadvec.push_back(road);
+                }
             }
-        }
-        auto target = roadvec[vehRng->intRand(roadvec.size())];
-        if (traciVehicle) {
-            traciVehicle->changeTarget(target);
-            EV_DEBUG << "Vehicle " << vehID << " change target to " << target << endl;
+            auto target = roadvec[vehRng->intRand(roadvec.size())];
+            if (traciVehicle) {
+                traciVehicle->changeTarget(target);
+                EV_DEBUG << "Vehicle " << vehID << " change target to " << target << endl;
+            }
         }
     }
 }

@@ -23,6 +23,7 @@
 package ib_dtm.examples.ib_dtm;
 import org.car2x.veins.nodes.RSU;
 import org.car2x.veins.modules.mobility.traci.TraCIVehicleInserter;
+import org.car2x.veins.subprojects.ib_dtm.RSUInserter;
 
 network Scenario extends org.car2x.veins.nodes.Scenario
 {
@@ -30,5 +31,6 @@ network Scenario extends org.car2x.veins.nodes.Scenario
         inserter: TraCIVehicleInserter {
             @display("p=208,0");
         }
-        rsu[1]: RSU;
+        rsu[0]: RSU;
+        rsuInserter: RSUInserter;
 }
