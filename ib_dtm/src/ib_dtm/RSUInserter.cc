@@ -60,16 +60,33 @@ void RSUInserter::insertRSU() {
     int idx = 0;
     int xOffset = 25;
     int yOffset = 25;
+    std::vector<cModule*> rsus;
     for (int x = 0; x<=xGridSize; x++) {
         for (int y = 0; y<=yGridSize; y++) {
             cModule* mod = nodeType->create("rsu", parentmod, rsunum, idx++);
             mod->finalizeParameters();
+            mod->setGateSize("rsuInputs", rsunum);
+            mod->setGateSize("rsuOutputs", rsunum);
             mod->buildInside();
             auto mob = mod->getSubmodule("mobility");
             mob->par("x") = x*roadLength + xOffset;
             mob->par("y") = y*roadLength + yOffset;
             mod->scheduleStart(0);
             mod->callInitialize();
+            rsus.push_back(mod);
+        }
+    }
+
+    for (int i=0; i<rsunum; i++) {
+        for (int j=i+1; j<rsunum; j++) {
+            auto x = rsus[i];
+            auto y = rsus[j];
+            cGate* xInGate = x->gate("rsuInputs", j);
+            cGate* yInGate = y->gate("rsuInputs", i);
+            cGate* xOutGate = x->gate("rsuOutputs", j);
+            cGate* yOutGate = y->gate("rsuOutputs", i);
+            xOutGate->connectTo(yInGate);
+            yOutGate->connectTo(xInGate);
         }
     }
 }
