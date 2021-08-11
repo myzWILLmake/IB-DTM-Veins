@@ -32,30 +32,13 @@ void ApplicationLayerRSU::initialize(int stage) {
     }
 }
 
-void split(const string& s, vector<string>& tokens, const string& delimiters = " ") {
-    size_t lastPos = s.find_first_not_of(delimiters, 0);
-    size_t pos = s.find_first_of(delimiters, lastPos);
-    while (pos != string::npos || lastPos != string::npos) {
-        tokens.push_back(s.substr(lastPos, pos-lastPos));
-        lastPos = s.find_first_not_of(delimiters, pos);
-        pos = s.find_first_of(delimiters, lastPos);
-    }
-}
-
-void decodeEventData(const string& data, vector<int>& positiveIDs, vector<int>& negativeIDs) {
-    int deliIdx = data.find(';');
-    string positiveStr = data.substr(0, deliIdx);
-    vector<string> posStrIds;
-    split(positiveStr, posStrIds);
-    for (auto& s : posStrIds) {
-        positiveIDs.push_back(stoi(s));
-    }
-
-    string negativeStr = data.substr(deliIdx+1);
-    vector<string> negStrIds;
-    split(negativeStr, negStrIds);
-    for (auto& s : negStrIds) {
-        negativeIDs.push_back(stoi(s));
+void ApplicationLayerRSU::decodeEventData(std::string eventData, vector<BeaconMsg*>& msgs) {
+    vector<string> msgstrs;
+    split(eventData, msgstrs);
+    for (auto& s : msgstrs) {
+        BeaconMsg* msg = new BeaconMsg();
+        msg->decode(s);
+        msgs.push_back(msg);
     }
 }
 
@@ -71,22 +54,29 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
             int sender = wsm->getSender();
             std::string eventData = wsm->getEventData();
             EV << "RSU[" << rsuID << "] received reports from VEH[" << sender << "]" << endl;
-            vector<int> positiveIDs;
-            vector<int> negativeIDs;
-            decodeEventData(eventData, positiveIDs, negativeIDs);
+            vector<BeaconMsg*> msgs;
+            decodeEventData(eventData, msgs);
             EV << "    Positive VEHs:" << endl;
             EV << "        ";
-            for (auto& id : positiveIDs) {
-                EV << id << " ";
+            for (auto& m : msgs) {
+                if (!m->isMalicious) {
+                    EV << m->sender << "@" << m->time << " ";
+                }
             }
             EV << endl;
 
             EV << "    Negative VEHs:" << endl;
             EV << "        ";
-            for (auto& id : negativeIDs) {
-                EV << id << " ";
+            for (auto& m : msgs) {
+                if (m->isMalicious) {
+                    EV << m->sender << "@" << m->time << " ";
+                }
             }
             EV << endl;
+
+            for (BeaconMsg* m : msgs) {
+                delete m;
+            }
             break;
         }
     }

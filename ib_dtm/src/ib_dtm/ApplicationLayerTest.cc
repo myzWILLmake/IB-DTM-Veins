@@ -74,32 +74,27 @@ void ApplicationLayerTest::initialize(int stage)
 
 void ApplicationLayerTest::recordBeaconMsg(int sender, bool isMaliciousMsg) {
     if (recordData.find(sender) == recordData.end()) {
-        recordData[sender] = isMaliciousMsg;
+        recordData[sender] = new BeaconMsg(sender, simTime(), isMaliciousMsg);
     } else {
-        recordData[sender] = recordData[sender] && isMaliciousMsg;
+        recordData[sender]->time = simTime();
+        recordData[sender]->isMalicious &= isMaliciousMsg;
     }
 }
 
 string ApplicationLayerTest::encodeEventData() {
     // encode trust events to string
     string data = "";
-    vector<int> positiveIDs;
-    vector<int> negativeIDs;
     for (auto& p : recordData) {
-        if (!p.second) {
-            positiveIDs.push_back(p.first);
-        } else {
-            negativeIDs.push_back(p.first);
-        }
-    }
-    for (int i=0; i<positiveIDs.size(); i++) {
-        data += to_string(positiveIDs[i]) + " ";
-    }
-    data += ";";
-    for (int i=0; i<negativeIDs.size(); i++) {
-        data += to_string(negativeIDs[i]) + " ";
+        data += p.second->encode() + " ";
     }
     return data;
+}
+
+void ApplicationLayerTest::clearRecordData() {
+    for (auto& p : recordData) {
+        delete p.second;
+    }
+    recordData.clear();
 }
 
 void ApplicationLayerTest::onWSA(DemoServiceAdvertisment* wsa)
@@ -109,7 +104,7 @@ void ApplicationLayerTest::onWSA(DemoServiceAdvertisment* wsa)
     if (!recordData.empty()) {
         lastSentRSU = simTime();
         string eventData = encodeEventData();
-        recordData.clear();
+        clearRecordData();
         ApplicationLayerTestMessage* newwsm = new ApplicationLayerTestMessage();
         populateWSM(newwsm);
         newwsm->setMsgType(APPLICATION_MSG_TYPE_RSU);

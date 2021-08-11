@@ -13,6 +13,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 #pragma once
+#include "ib_dtm/common.h"
 #include "ib_dtm/ib_dtm.h"
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 
@@ -24,6 +25,7 @@ public:
 protected:
     int rsuID;
     void onWSM(veins::BaseFrame1609_4* wsm) override;
+    void decodeEventData(std::string eventData, vector<BeaconMsg*>& msgs);
     // void handleSelfMsg(cMessage* msg) override;
 };
 

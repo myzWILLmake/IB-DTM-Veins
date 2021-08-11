@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include "ib_dtm/common.h"
 #include "ib_dtm/ib_dtm.h"
-
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 
 namespace ib_dtm {
@@ -50,10 +50,12 @@ protected:
     int msgSerialNo;
 
     // record
-    std::map<int, bool> recordData;
+//    std::map<int, bool> recordData;
+    std::map<int, BeaconMsg*> recordData;
 protected:
     void recordBeaconMsg(int sender, bool isMaliciousMsg);
     std::string encodeEventData();
+    void clearRecordData();
 
     void onWSM(veins::BaseFrame1609_4* wsm) override;
     void onWSA(veins::DemoServiceAdvertisment* wsa) override;
