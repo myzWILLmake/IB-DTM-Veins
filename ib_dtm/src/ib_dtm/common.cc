@@ -38,4 +38,52 @@ void BeaconMsg::decode(string input) {
     if (data[2] == "t") isMalicious = true;
 }
 
+Block::Block() {
+    prev = 0;
+    hash = 0;
+}
+
+string Block::doEncode() {
+    string data = "";
+    data += to_string(prev) + " ";
+    for (auto p : trustOffsets) {
+        data += to_string(p.first) + ":" + to_string(p.second) + ";";
+    }
+    return data;
+}
+
+void Block::generateHash() {
+    string rawEncoded = doEncode();
+    hash = std::hash<string>{}(rawEncoded);
+}
+
+void Block::addTrustOffset(VehIdx id, int val) {
+    trustOffsets[id] = val;
+}
+
+string Block::encode() {
+    if (hash == 0) {
+        generateHash();
+    }
+    string rawEncoded = doEncode();
+    string data = to_string(hash) + " " + rawEncoded;
+    return data;
+}
+
+void Block::decode(string input) {
+    vector<string> data;
+    split(input, data);
+    hash = stoul(data[0]);
+    prev = stoul(data[1]);
+
+    vector<string> trustOffsetStrs;
+    split(data[2], trustOffsetStrs, ";");
+    for (auto& str : trustOffsetStrs) {
+        int pos = str.find(":");
+        VehIdx id = VehIdx(stoi(str.substr(0, pos)));
+        int val = stoi(str.substr(pos+1));
+        trustOffsets[id] = val;
+    }
+}
+
 }
