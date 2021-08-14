@@ -24,9 +24,13 @@ public:
     void initialize(int stage) override;
 protected:
     int rsuID;
+    std::map<int, std::vector<BeaconMsg*>> vehRecords;
+    std::map<int, int> vehTrustRatings;
     void onWSM(veins::BaseFrame1609_4* wsm) override;
     void decodeEventData(std::string eventData, vector<BeaconMsg*>& msgs);
     // void handleSelfMsg(cMessage* msg) override;
+
+    void generateTrustRating();
 };
 
 }

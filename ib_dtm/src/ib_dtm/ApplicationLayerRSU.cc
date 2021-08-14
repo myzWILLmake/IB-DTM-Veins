@@ -56,30 +56,62 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
             EV << "RSU[" << rsuID << "] received reports from VEH[" << sender << "]" << endl;
             vector<BeaconMsg*> msgs;
             decodeEventData(eventData, msgs);
-            EV << "    Positive VEHs:" << endl;
-            EV << "        ";
-            for (auto& m : msgs) {
-                if (!m->isMalicious) {
-                    EV << m->sender << "@" << m->time << " ";
-                }
-            }
-            EV << endl;
 
-            EV << "    Negative VEHs:" << endl;
-            EV << "        ";
-            for (auto& m : msgs) {
-                if (m->isMalicious) {
-                    EV << m->sender << "@" << m->time << " ";
-                }
+            for (auto msg : msgs) {
+                vehRecords[msg->sender].push_back(msg);
             }
-            EV << endl;
 
-            for (BeaconMsg* m : msgs) {
-                delete m;
-            }
+            // EV << "    Positive VEHs:" << endl;
+            // EV << "        ";
+            // for (auto& m : msgs) {
+            //     if (!m->isMalicious) {
+            //         EV << m->sender << "@" << m->time << " ";
+            //     }
+            // }
+            // EV << endl;
+
+            // EV << "    Negative VEHs:" << endl;
+            // EV << "        ";
+            // for (auto& m : msgs) {
+            //     if (m->isMalicious) {
+            //         EV << m->sender << "@" << m->time << " ";
+            //     }
+            // }
+            // EV << endl;
+
+            // for (BeaconMsg* m : msgs) {
+            //     delete m;
+            // }
             break;
         }
     }
+}
+
+void ApplicationLayerRSU::generateTrustRating() {
+    for (auto p : vehRecords) {
+        if (p.second.size() >= 3) {
+            int rating = 0;
+            for (auto msg : p.second) {
+                if (msg->isMalicious) {
+                    rating--;
+                } else {
+                    rating++;
+                }
+            }
+
+            if (rating > 0) {
+                vehTrustRatings[p.first] = 1;
+            } else if (rating < 0) {
+                vehTrustRatings[p.first] = -1;
+            }
+        }
+
+        for (auto msg : p.second) {
+            delete msg;
+        }
+    }
+
+    vehRecords.clear();
 }
 
 // void ApplicationLayerRSU::handleSelfMsg(cMessage* msg) {
