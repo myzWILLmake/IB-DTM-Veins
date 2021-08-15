@@ -33,6 +33,8 @@ module RSU
     gates:
         input rsuInputs[];
         output rsuOutputs[];
+        input sessionInput;
+        output sessionOutput;
         input veinsradioIn; // gate for sendDirect
     submodules:
         appl: <applType> like org.car2x.veins.base.modules.IBaseApplLayer {

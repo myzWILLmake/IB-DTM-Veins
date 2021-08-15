@@ -77,9 +77,19 @@ void RSUInserter::insertRSU() {
         }
     }
 
+    cModule* session = parentmod->getSubmodule("ibdtmSession");
+    session->setGateSize("rsuInputs", rsunum);
+    session->setGateSize("rsuOutputs", rsunum);
     for (int i=0; i<rsunum; i++) {
+        auto x = rsus[i];
+        cGate* xSessionInGate = x->gate("sessionInput");
+        cGate* xSessionOutGate = x->gate("sessionOutput");
+        cGate* sessionInGate = session->gate("rsuInputs", i);
+        cGate* sessionOutGate = session->gate("rsuOutputs", i);
+        sessionOutGate->connectTo(xSessionInGate);
+        xSessionOutGate->connectTo(sessionInGate);
+
         for (int j=i+1; j<rsunum; j++) {
-            auto x = rsus[i];
             auto y = rsus[j];
             cGate* xInGate = x->gate("rsuInputs", j);
             cGate* yInGate = y->gate("rsuInputs", i);
@@ -89,4 +99,6 @@ void RSUInserter::insertRSU() {
             yOutGate->connectTo(xInGate);
         }
     }
+
+
 }

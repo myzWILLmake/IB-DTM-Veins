@@ -24,13 +24,20 @@ package ib_dtm.examples.ib_dtm;
 import org.car2x.veins.nodes.RSU;
 import org.car2x.veins.modules.mobility.traci.TraCIVehicleInserter;
 import org.car2x.veins.subprojects.ib_dtm.RSUInserter;
+import org.car2x.veins.subprojects.ib_dtm.IBDTMSession;
 
 network Scenario extends org.car2x.veins.nodes.Scenario
 {
+    @display("bgb=712,584");
     submodules:
         inserter: TraCIVehicleInserter {
             @display("p=208,0");
         }
         rsu[0]: RSU;
-        rsuInserter: RSUInserter;
+        rsuInserter: RSUInserter {
+            @display("p=473,14");
+        }
+        ibdtmSession: IBDTMSession {
+            @display("p=402,14");
+        }
 }
