@@ -57,6 +57,10 @@ void Block::generateHash() {
     hash = std::hash<string>{}(rawEncoded);
 }
 
+void Block::setPrevHash(HashVal p) {
+    prev = p;
+}
+
 void Block::addTrustOffset(VehIdx id, int val) {
     trustOffsets[id] = val;
 }

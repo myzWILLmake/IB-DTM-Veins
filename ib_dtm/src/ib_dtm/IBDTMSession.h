@@ -17,19 +17,25 @@
 #include "ib_dtm/ib_dtm.h"
 #include "veins/veins.h"
 #include "common.h"
+#include "ib_dtm/IBDTMSession_m.h"
 
 namespace ib_dtm {
 
 class IB_DTM_API IBDTMSession : public cSimpleModule {
-public:
+protected:
     int numInitStages() const override;
     void initialize(int stage) override;
     void handleMessage(cMessage* msg) override;
-    void handleRSUMsg(int idx, cMessage* msg);
-
-protected:
+    
+    int rsunum;
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
+    Block* pendingBlock;
+
+    void handleRSUMsg(int idx, cMessage* msg);
+    void onNewCommittee();
+    void onNewBlock(Block* block);
+    void broadcastNewBlock(HashVal hash);
 };
 
 }

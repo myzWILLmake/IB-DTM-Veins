@@ -23,18 +23,19 @@ using namespace std;
 Define_Module(ib_dtm::ApplicationLayerRSU);
 
 int ApplicationLayerRSU::numInitStages() const {
-    return std::max(cSimpleModule::numInitStages(), 2);
+    return std::max(cSimpleModule::numInitStages(), 3);
 }
 
 void ApplicationLayerRSU::initialize(int stage) {
     DemoBaseApplLayer::initialize(stage);
     if (stage == 0) {
         rsuID = getParentModule()->getIndex();
+        blockchain = 0;
     }
-    if (stage == 1) {
+    if (stage == 2) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
         sessionInputGateId = findGate("sessionInput");
-        startService(Channel::sch2, rsuID, "rsu service");
+//        startService(Channel::sch2, rsuID, "rsu service");
     }
 }
 
@@ -49,10 +50,11 @@ void ApplicationLayerRSU::decodeEventData(std::string eventData, vector<BeaconMs
 }
 
 void ApplicationLayerRSU::handleMessage(cMessage* msg) {
-    if (msg->getArrivalGate()->getBaseId() == rsuInputBaseGateId) {
+    cGate* g = msg->getArrivalGate();
+    if (g && g->getBaseId() == rsuInputBaseGateId) {
         int idx = msg->getArrivalGate()->getIndex();
         handleRSUMsg(idx, msg);
-    } else if (msg->getArrivalGate()->getBaseId() == sessionInputGateId) {
+    } else if (g && g->getBaseId() == sessionInputGateId) {
         handleSessionMsg(msg);
     } else {
         DemoBaseApplLayer::handleMessage(msg);
@@ -63,8 +65,26 @@ void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* msg) {
 
 }
 
-void ApplicationLayerRSU::handleSessionMsg(cMessage* msg) {
-
+void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
+    IBDTMSessionMsg* msg = check_and_cast<IBDTMSessionMsg*>(m);
+    SessionMsgType msgType = SessionMsgType(msg->getMsgType());
+    switch(msgType) {
+        case NewCommittee: {
+            string data = msg->getData();
+            EV << "RSU[" << rsuID << "] received NewCommittee: " << data << endl;
+            // Temp: generate block here
+            generateBlock();
+            break;
+        }
+        case CommittedBlock: {
+            string data = msg->getData();
+            Block* block = new Block();
+            block->decode(data);
+            blocks[block->hash] = block;
+            EV << "Received block: " << block->hash << endl;
+            break;
+        }
+    }
 }
 
 void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
@@ -137,6 +157,27 @@ void ApplicationLayerRSU::generateTrustRating() {
     }
 
     vehRecords.clear();
+}
+
+void ApplicationLayerRSU::generateBlock() {
+    EV << "generateBlock" << endl;
+    generateTrustRating();
+    EV << "generatedTR" << endl;
+    Block* block = new Block();
+    block->setPrevHash(blockchain);
+    for (auto& p : vehTrustRatings) {
+        block->addTrustOffset(p.first, p.second);
+    }
+    vehTrustRatings.clear();
+    block->generateHash();
+    EV << "generateHash" << endl;
+    IBDTMRSUMsg* msg = new IBDTMRSUMsg();
+    msg->setMsgType(RSUMsgType::ProposedBlock);
+    msg->setSender(rsuID);
+    msg->setData(block->encode().c_str());
+    send(msg, "sessionOutput");
+    EV << "sessiion msg sended" << endl;
+    delete block;
 }
 
 // void ApplicationLayerRSU::handleSelfMsg(cMessage* msg) {

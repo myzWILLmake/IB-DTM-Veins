@@ -7,14 +7,15 @@ namespace ib_dtm {
 typedef size_t HashVal;
 typedef int RSUIdx;
 typedef int VehIdx;
-//
-//enum RSUMsgType {
-//    ProposedBlock
-//};
-//
-//enum SessionMsgType {
-//    CommittedBlock
-//};
+
+enum RSUMsgType {
+   ProposedBlock
+};
+
+enum SessionMsgType {
+    NewCommittee,
+    CommittedBlock
+};
 
 void split(const string& s, vector<string>& tokens, const string& delimiters = " ");
 
@@ -42,6 +43,7 @@ public:
     Block();
     void generateHash();
     void addTrustOffset(VehIdx id, int val);
+    void setPrevHash(HashVal prev);
     string encode();
     void decode(string input);
 };

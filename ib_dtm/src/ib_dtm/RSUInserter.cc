@@ -37,7 +37,7 @@ int RSUInserter::numInitStages() const
 void RSUInserter::initialize(int stage)
 {
     cSimpleModule::initialize(stage);
-    if (stage != 0) {
+    if (stage != 1) {
         return;
     }
 
@@ -65,12 +65,21 @@ void RSUInserter::insertRSU() {
         for (int y = 0; y<=yGridSize; y++) {
             cModule* mod = nodeType->create("rsu", parentmod, rsunum, idx++);
             mod->finalizeParameters();
-            mod->setGateSize("rsuInputs", rsunum);
-            mod->setGateSize("rsuOutputs", rsunum);
+            // mod->setGateSize("rsuInputs", rsunum);
+            // mod->setGateSize("rsuOutputs", rsunum);
             mod->buildInside();
             auto mob = mod->getSubmodule("mobility");
             mob->par("x") = x*roadLength + xOffset;
             mob->par("y") = y*roadLength + yOffset;
+
+            auto appl = mod->getSubmodule("appl");
+            appl->addGate("rsuInputs", cGate::INPUT, true);
+            appl->addGate("rsuOutputs", cGate::OUTPUT, true);
+            appl->setGateSize("rsuInputs", rsunum);
+            appl->setGateSize("rsuOutputs", rsunum);
+            appl->addGate("sessionInput", cGate::INPUT);
+            appl->addGate("sessionOutput", cGate::OUTPUT);
+
             mod->scheduleStart(0);
             mod->callInitialize();
             rsus.push_back(mod);
@@ -81,7 +90,7 @@ void RSUInserter::insertRSU() {
     session->setGateSize("rsuInputs", rsunum);
     session->setGateSize("rsuOutputs", rsunum);
     for (int i=0; i<rsunum; i++) {
-        auto x = rsus[i];
+        auto x = rsus[i]->getSubmodule("appl");
         cGate* xSessionInGate = x->gate("sessionInput");
         cGate* xSessionOutGate = x->gate("sessionOutput");
         cGate* sessionInGate = session->gate("rsuInputs", i);
@@ -90,7 +99,7 @@ void RSUInserter::insertRSU() {
         xSessionOutGate->connectTo(sessionInGate);
 
         for (int j=i+1; j<rsunum; j++) {
-            auto y = rsus[j];
+            auto y = rsus[j]->getSubmodule("appl");
             cGate* xInGate = x->gate("rsuInputs", j);
             cGate* yInGate = y->gate("rsuInputs", i);
             cGate* xOutGate = x->gate("rsuOutputs", j);

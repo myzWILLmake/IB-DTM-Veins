@@ -16,6 +16,7 @@
 #include "ib_dtm/common.h"
 #include "ib_dtm/ib_dtm.h"
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
+#include "ib_dtm/IBDTMSession_m.h"
 
 namespace ib_dtm {
 
@@ -30,6 +31,7 @@ protected:
     std::map<VehIdx, std::vector<BeaconMsg*>> vehRecords;
     std::map<VehIdx, int> vehTrustRatings;
     std::map<HashVal, Block*> blocks;
+    HashVal blockchain;
     int numInitStages() const override;
     void onWSM(veins::BaseFrame1609_4* wsm) override;
     void handleMessage(cMessage* msg) override;
@@ -39,6 +41,7 @@ protected:
     // void handleSelfMsg(cMessage* msg) override;
 
     void generateTrustRating();
+    void generateBlock();
 };
 
 }

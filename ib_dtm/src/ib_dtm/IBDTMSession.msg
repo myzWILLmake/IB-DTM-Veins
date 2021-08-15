@@ -17,13 +17,13 @@
 // TODO generated message class
 //
 
-packet IBDTMRSU {
+packet IBDTMRSUMsg {
  	int msgType = 0;
  	int sender = 0;
  	string data;
 }
 
-packet IBDTMSession {
+packet IBDTMSessionMsg {
     int msgType = 0;
 	string data;
 }
