@@ -68,7 +68,6 @@ void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {
     RSUMsgType msgType = RSUMsgType(msg->getMsgType());
     switch(msgType) {
         case ProposedBlock: {
-            EV << "received proposed block" << endl;
             int sender = msg->getSender();
             string data = msg->getData();
             Block* block = new Block();
@@ -86,16 +85,17 @@ void IBDTMSession::onNewBlock(Block* block) {
     //TODO: consensus progress
     //Temp: approve this block
     blocks[block->hash] = block;
-    
+    broadcastNewBlock(block->hash);
 }
 
 void IBDTMSession::broadcastNewBlock(HashVal hash) {
     auto block = blocks[hash];
-    IBDTMSessionMsg* msg = new IBDTMSessionMsg();
-    msg->setMsgType(SessionMsgType::CommittedBlock);
-    msg->setData(block->encode().c_str());
+    string msgData = block->encode();
     
     for (int i=0; i<rsunum; i++) {
+        IBDTMSessionMsg* msg = new IBDTMSessionMsg();
+        msg->setMsgType(SessionMsgType::CommittedBlock);
+        msg->setData(msgData.c_str());
         send(msg, "rsuOutputs", i);
     }
 }

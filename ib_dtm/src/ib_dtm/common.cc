@@ -80,6 +80,7 @@ void Block::decode(string input) {
     hash = stoul(data[0]);
     prev = stoul(data[1]);
 
+    if (data.size() <=2) return;
     vector<string> trustOffsetStrs;
     split(data[2], trustOffsetStrs, ";");
     for (auto& str : trustOffsetStrs) {

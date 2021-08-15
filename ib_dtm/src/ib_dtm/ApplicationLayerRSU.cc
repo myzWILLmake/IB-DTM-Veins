@@ -174,7 +174,8 @@ void ApplicationLayerRSU::generateBlock() {
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::ProposedBlock);
     msg->setSender(rsuID);
-    msg->setData(block->encode().c_str());
+    string msgData = block->encode();
+    msg->setData(msgData.c_str());
     send(msg, "sessionOutput");
     EV << "sessiion msg sended" << endl;
     delete block;
