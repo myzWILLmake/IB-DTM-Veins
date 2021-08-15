@@ -22,13 +22,14 @@ namespace ib_dtm {
 
 class IB_DTM_API IBDTMSession : public cSimpleModule {
 public:
-    IBDTMSession();
-    ~IBDTMSession() override;
     int numInitStages() const override;
     void initialize(int stage) override;
+    void handleMessage(cMessage* msg) override;
+    void handleRSUMsg(int idx, cMessage* msg);
 
 protected:
-    // std::map<HashVal, Block*> blocks;
+    int rsuInputBaseGateId;
+    std::map<HashVal, Block*> blocks;
 };
 
 }

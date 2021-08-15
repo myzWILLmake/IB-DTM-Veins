@@ -24,9 +24,17 @@ public:
     void initialize(int stage) override;
 protected:
     int rsuID;
+
+    int rsuInputBaseGateId;
+    int sessionInputGateId;
     std::map<VehIdx, std::vector<BeaconMsg*>> vehRecords;
     std::map<VehIdx, int> vehTrustRatings;
+    std::map<HashVal, Block*> blocks;
+    int numInitStages() const override;
     void onWSM(veins::BaseFrame1609_4* wsm) override;
+    void handleMessage(cMessage* msg) override;
+    void handleRSUMsg(int idx, cMessage* msg);
+    void handleSessionMsg(cMessage* msg);
     void decodeEventData(std::string eventData, vector<BeaconMsg*>& msgs);
     // void handleSelfMsg(cMessage* msg) override;
 

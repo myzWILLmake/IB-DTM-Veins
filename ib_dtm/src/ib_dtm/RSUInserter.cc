@@ -37,7 +37,7 @@ int RSUInserter::numInitStages() const
 void RSUInserter::initialize(int stage)
 {
     cSimpleModule::initialize(stage);
-    if (stage != 1) {
+    if (stage != 0) {
         return;
     }
 

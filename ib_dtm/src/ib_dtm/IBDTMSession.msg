@@ -13,35 +13,17 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include "IBDTMSession.h"
+//
+// TODO generated message class
+//
 
-Define_Module(ib_dtm::IBDTMSession);
-
-using namespace veins;
-using namespace ib_dtm;
-
-int IBDTMSession::numInitStages() const {
-    return std::max(cSimpleModule::numInitStages(), 2);
+packet IBDTMRSU {
+ 	int msgType = 0;
+ 	int sender = 0;
+ 	string data;
 }
 
-void IBDTMSession::initialize(int stage) {
-    cSimpleModule::initialize(stage);
-    if (stage == 0) {
-    }
-
-    if (stage == 1) {
-        rsuInputBaseGateId = findGate("rsuInputs", 0);
-    }
-}
-
-
-void IBDTMSession::handleMessage(cMessage* msg) {
-    if (msg->getArrivalGate()->getBaseId() == rsuInputBaseGateId) {
-        int idx = msg->getArrivalGate()->getIndex();
-        handleRSUMsg(idx, msg);
-    }
-}
-
-void IBDTMSession::handleRSUMsg(int idx, cMessage* msg) {
-
+packet IBDTMSession {
+    int msgType = 0;
+	string data;
 }

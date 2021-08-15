@@ -22,12 +22,18 @@ using namespace std;
 
 Define_Module(ib_dtm::ApplicationLayerRSU);
 
+int ApplicationLayerRSU::numInitStages() const {
+    return std::max(cSimpleModule::numInitStages(), 2);
+}
+
 void ApplicationLayerRSU::initialize(int stage) {
     DemoBaseApplLayer::initialize(stage);
     if (stage == 0) {
         rsuID = getParentModule()->getIndex();
     }
     if (stage == 1) {
+        rsuInputBaseGateId = findGate("rsuInputs", 0);
+        sessionInputGateId = findGate("sessionInput");
         startService(Channel::sch2, rsuID, "rsu service");
     }
 }
@@ -40,6 +46,25 @@ void ApplicationLayerRSU::decodeEventData(std::string eventData, vector<BeaconMs
         msg->decode(s);
         msgs.push_back(msg);
     }
+}
+
+void ApplicationLayerRSU::handleMessage(cMessage* msg) {
+    if (msg->getArrivalGate()->getBaseId() == rsuInputBaseGateId) {
+        int idx = msg->getArrivalGate()->getIndex();
+        handleRSUMsg(idx, msg);
+    } else if (msg->getArrivalGate()->getBaseId() == sessionInputGateId) {
+        handleSessionMsg(msg);
+    } else {
+        DemoBaseApplLayer::handleMessage(msg);
+    }
+}
+
+void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* msg) {
+
+}
+
+void ApplicationLayerRSU::handleSessionMsg(cMessage* msg) {
+
 }
 
 void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)

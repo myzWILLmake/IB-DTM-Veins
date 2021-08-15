@@ -7,6 +7,14 @@ namespace ib_dtm {
 typedef size_t HashVal;
 typedef int RSUIdx;
 typedef int VehIdx;
+//
+//enum RSUMsgType {
+//    ProposedBlock
+//};
+//
+//enum SessionMsgType {
+//    CommittedBlock
+//};
 
 void split(const string& s, vector<string>& tokens, const string& delimiters = " ");
 
