@@ -31,9 +31,14 @@ protected:
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
     Block* pendingBlock;
+    RSUIdx proposer;
+    vector<RSUIdx> committee;
+
+    /* ned veriable */
+    int committeeSize;
 
     void handleRSUMsg(int idx, cMessage* msg);
-    void onNewCommittee();
+    void newCommittee();
     void onNewBlock(Block* block);
     void broadcastNewBlock(HashVal hash);
 };

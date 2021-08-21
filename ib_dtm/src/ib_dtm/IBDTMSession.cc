@@ -15,6 +15,10 @@
 
 #include "IBDTMSession.h"
 
+#include <random>
+#include <algorithm>
+#include <iterator>
+
 Define_Module(ib_dtm::IBDTMSession);
 
 using namespace veins;
@@ -28,6 +32,12 @@ int IBDTMSession::numInitStages() const {
 void IBDTMSession::initialize(int stage) {
     cSimpleModule::initialize(stage);
     if (stage == 0) {
+    }
+
+    if (stage == 1) {
+        committeeSize = par("committeeSize");
+        EV << "committeeSize:" << committeeSize << endl;
+        committee = vector<RSUIdx>(committeeSize);
     }
 
     if (stage == 2) {
@@ -46,7 +56,7 @@ void IBDTMSession::handleMessage(cMessage* msg) {
     EV << "recevied msg at session" << endl;
     cGate* gate = msg->getArrivalGate();
     if (msg->isSelfMessage()) {
-        onNewCommittee();    
+        newCommittee();
     } else if (gate && gate->getBaseId() == rsuInputBaseGateId) {
         int idx = msg->getArrivalGate()->getIndex();
         handleRSUMsg(idx, msg);
@@ -55,11 +65,32 @@ void IBDTMSession::handleMessage(cMessage* msg) {
     }
 }
 
-void IBDTMSession::onNewCommittee() {
-    IBDTMSessionMsg* msg = new IBDTMSessionMsg();
-    msg->setMsgType(SessionMsgType::NewCommittee);
-    msg->setData("test");
-    send(msg, "rsuOutputs", 1);
+void IBDTMSession::newCommittee() {
+    // generate new proposer and committee
+
+    // committee
+    vector<int> rsuIdxs(rsunum);
+    for (int i=0; i<rsunum; i++) {
+        rsuIdxs[i] = i;
+    }
+    std::random_device rd;
+    std::mt19937 g(rd());
+    shuffle(rsuIdxs.begin(), rsuIdxs.end(), g);
+
+    for (int i=0; i<committeeSize; i++) {
+        committee[i] = rsuIdxs[i];
+    }
+
+    // proposer
+    // Temp: pick the first of the committee
+    proposer = committee[0];
+    string data = SessionMsgHelper::encodeNewCommittee(proposer, committee);
+    for (auto id : committee) {
+        IBDTMSessionMsg* msg = new IBDTMSessionMsg();
+        msg->setMsgType(SessionMsgType::NewCommittee);
+        msg->setData(data.c_str());
+        send(msg, "rsuOutputs", id);
+    }
 }
 
 void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {

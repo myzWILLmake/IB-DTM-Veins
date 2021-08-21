@@ -31,6 +31,7 @@ void ApplicationLayerRSU::initialize(int stage) {
     if (stage == 0) {
         rsuID = getParentModule()->getIndex();
         blockchain = 0;
+        inCommittee = false;
     }
     if (stage == 2) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
@@ -71,9 +72,7 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
     switch(msgType) {
         case NewCommittee: {
             string data = msg->getData();
-            EV << "RSU[" << rsuID << "] received NewCommittee: " << data << endl;
-            // Temp: generate block here
-            generateBlock();
+            onNewCommittee(data);
             break;
         }
         case CommittedBlock: {
@@ -85,6 +84,29 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
             break;
         }
     }
+}
+
+void ApplicationLayerRSU::onNewCommittee(string data) {
+    RSUIdx proposer;
+    vector<RSUIdx> committee;
+    SessionMsgHelper::decodeNewCommittee(data, proposer, committee);
+    if (rsuID == proposer) {
+        // genderate new block
+        generateBlock();
+        return;
+    } else {
+        // check if in committee
+        inCommittee = false;
+        for (auto id : committee) {
+            if (id == rsuID) {
+                inCommittee = true;
+                break;
+            }
+        }
+    }
+
+    EV << "RSU[" << rsuID << "] received NewCommittee" << endl;
+    EV << "    proposer:" << proposer << " committee? " << inCommittee << endl;
 }
 
 void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)

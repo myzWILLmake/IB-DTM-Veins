@@ -25,6 +25,7 @@ public:
     void initialize(int stage) override;
 protected:
     int rsuID;
+    bool inCommittee;
 
     int rsuInputBaseGateId;
     int sessionInputGateId;
@@ -39,6 +40,8 @@ protected:
     void handleSessionMsg(cMessage* msg);
     void decodeEventData(std::string eventData, vector<BeaconMsg*>& msgs);
     // void handleSelfMsg(cMessage* msg) override;
+
+    void onNewCommittee(std::string data);
 
     void generateTrustRating();
     void generateBlock();

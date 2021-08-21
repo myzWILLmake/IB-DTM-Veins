@@ -18,6 +18,7 @@ package org.car2x.veins.subprojects.ib_dtm;
 simple IBDTMSession {
 	parameters:
 	    @class(ib_dtm::IBDTMSession);
+	    int committeeSize = default(16);
 
 	gates:
 		input rsuInputs[];

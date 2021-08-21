@@ -12,6 +12,27 @@ void split(const string& s, vector<string>& tokens, const string& delimiters) {
     }
 }
 
+string SessionMsgHelper::encodeNewCommittee(RSUIdx proposer, vector<RSUIdx>& committee) {
+    string data = to_string(proposer) + ";";
+    for (auto idx : committee) {
+        data += to_string(idx) + " ";
+    }
+    return data;
+}
+
+void SessionMsgHelper::decodeNewCommittee(string input, RSUIdx& proposer, vector<RSUIdx>& committee) {
+    vector<string> data;
+    split(input, data, ";");
+    proposer = stoi(data[0]);
+    if (data.size() <= 0) return;
+    vector<string> committeeStr;
+    split(data[1], committeeStr);
+    committee.resize(committeeStr.size());
+    for (int i=0; i<committee.size(); i++) {
+        committee[i] = stoi(committeeStr[i]);
+    }
+}
+
 BeaconMsg::BeaconMsg(int s, simtime_t t, bool m) {
     sender = s;
     time = t;

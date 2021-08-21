@@ -19,6 +19,12 @@ enum SessionMsgType {
 
 void split(const string& s, vector<string>& tokens, const string& delimiters = " ");
 
+class SessionMsgHelper {
+public:
+    static string encodeNewCommittee(RSUIdx proposer, vector<RSUIdx>& committee);
+    static void decodeNewCommittee(string input, RSUIdx& proposer, vector<RSUIdx>& committee);
+};
+
 class BeaconMsg {
 public:
     int sender;
