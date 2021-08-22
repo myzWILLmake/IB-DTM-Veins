@@ -21,8 +21,8 @@ void split(const string& s, vector<string>& tokens, const string& delimiters = "
 
 class SessionMsgHelper {
 public:
-    static string encodeNewCommittee(RSUIdx proposer, vector<RSUIdx>& committee);
-    static void decodeNewCommittee(string input, RSUIdx& proposer, vector<RSUIdx>& committee);
+    static string encodeNewCommittee(int epoch, RSUIdx proposer, vector<RSUIdx>& committee);
+    static void decodeNewCommittee(string input, int& epoch, RSUIdx& proposer, vector<RSUIdx>& committee);
 };
 
 class BeaconMsg {
@@ -42,9 +42,9 @@ protected:
     map<VehIdx, int> trustOffsets;
     string doEncode();
 public:
+    int epoch;
     HashVal hash;
     HashVal prev;
-    // RSUIdx proposer;
 
     Block();
     void generateHash();

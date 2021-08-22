@@ -12,21 +12,22 @@ void split(const string& s, vector<string>& tokens, const string& delimiters) {
     }
 }
 
-string SessionMsgHelper::encodeNewCommittee(RSUIdx proposer, vector<RSUIdx>& committee) {
-    string data = to_string(proposer) + ";";
+string SessionMsgHelper::encodeNewCommittee(int epoch, RSUIdx proposer, vector<RSUIdx>& committee) {
+    string data = to_string(epoch) + ";" + to_string(proposer) + ";";
     for (auto idx : committee) {
         data += to_string(idx) + " ";
     }
     return data;
 }
 
-void SessionMsgHelper::decodeNewCommittee(string input, RSUIdx& proposer, vector<RSUIdx>& committee) {
+void SessionMsgHelper::decodeNewCommittee(string input, int& epoch, RSUIdx& proposer, vector<RSUIdx>& committee) {
     vector<string> data;
     split(input, data, ";");
-    proposer = stoi(data[0]);
-    if (data.size() <= 0) return;
+    epoch = stoi(data[0]);
+    proposer = stoi(data[1]);
+    if (data.size() <= 2) return;
     vector<string> committeeStr;
-    split(data[1], committeeStr);
+    split(data[2], committeeStr);
     committee.resize(committeeStr.size());
     for (int i=0; i<committee.size(); i++) {
         committee[i] = stoi(committeeStr[i]);
@@ -91,17 +92,18 @@ string Block::encode() {
         generateHash();
     }
     string rawEncoded = doEncode();
-    string data = to_string(hash) + " " + rawEncoded;
+    string data = to_string(epoch) + " " +to_string(hash) + " " + rawEncoded;
     return data;
 }
 
 void Block::decode(string input) {
     vector<string> data;
     split(input, data);
-    hash = stoul(data[0]);
-    prev = stoul(data[1]);
+    epoch = stoi(data[0]);
+    hash = stoul(data[1]);
+    prev = stoul(data[2]);
 
-    if (data.size() <=2) return;
+    if (data.size() <=3) return;
     vector<string> trustOffsetStrs;
     split(data[2], trustOffsetStrs, ";");
     for (auto& str : trustOffsetStrs) {

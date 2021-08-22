@@ -67,6 +67,7 @@ void IBDTMSession::handleMessage(cMessage* msg) {
 
 void IBDTMSession::newCommittee() {
     // generate new proposer and committee
+    epoch++;
 
     // committee
     vector<int> rsuIdxs(rsunum);
@@ -84,7 +85,7 @@ void IBDTMSession::newCommittee() {
     // proposer
     // Temp: pick the first of the committee
     proposer = committee[0];
-    string data = SessionMsgHelper::encodeNewCommittee(proposer, committee);
+    string data = SessionMsgHelper::encodeNewCommittee(epoch, proposer, committee);
     for (auto id : committee) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
         msg->setMsgType(SessionMsgType::NewCommittee);

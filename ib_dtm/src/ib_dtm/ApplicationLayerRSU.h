@@ -32,6 +32,7 @@ protected:
     std::map<VehIdx, std::vector<BeaconMsg*>> vehRecords;
     std::map<VehIdx, int> vehTrustRatings;
     std::map<HashVal, Block*> blocks;
+    std::map<int, std::vector<RSUIdx>> epochCommittees;
     HashVal blockchain;
     int numInitStages() const override;
     void onWSM(veins::BaseFrame1609_4* wsm) override;
@@ -42,9 +43,10 @@ protected:
     // void handleSelfMsg(cMessage* msg) override;
 
     void onNewCommittee(std::string data);
+    bool isInCommittee(int epoch);
 
     void generateTrustRating();
-    void generateBlock();
+    void generateBlock(int epoch);
 };
 
 }

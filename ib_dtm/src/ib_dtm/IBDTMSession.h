@@ -31,6 +31,8 @@ protected:
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
     Block* pendingBlock;
+
+    int epoch;
     RSUIdx proposer;
     vector<RSUIdx> committee;
 

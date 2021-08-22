@@ -86,27 +86,27 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
     }
 }
 
+bool ApplicationLayerRSU::isInCommittee(int epoch) {
+    if (epochCommittees.find(epoch) == epochCommittees.end()) return false;
+    for (auto id : epochCommittees[epoch]) {
+        if (id == rsuID) return true;
+    }
+    return false;
+}
+
 void ApplicationLayerRSU::onNewCommittee(string data) {
     RSUIdx proposer;
     vector<RSUIdx> committee;
-    SessionMsgHelper::decodeNewCommittee(data, proposer, committee);
+    int epoch;
+    SessionMsgHelper::decodeNewCommittee(data, epoch, proposer, committee);
+    epochCommittees[epoch] = committee;
     if (rsuID == proposer) {
         // genderate new block
-        generateBlock();
-        return;
-    } else {
-        // check if in committee
-        inCommittee = false;
-        for (auto id : committee) {
-            if (id == rsuID) {
-                inCommittee = true;
-                break;
-            }
-        }
+        generateBlock(epoch);
     }
 
     EV << "RSU[" << rsuID << "] received NewCommittee" << endl;
-    EV << "    proposer:" << proposer << " committee? " << inCommittee << endl;
+    EV << "    proposer:" << proposer << " committee? " << isInCommittee(epoch) << endl;
 }
 
 void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
@@ -181,11 +181,12 @@ void ApplicationLayerRSU::generateTrustRating() {
     vehRecords.clear();
 }
 
-void ApplicationLayerRSU::generateBlock() {
-    EV << "generateBlock" << endl;
+void ApplicationLayerRSU::generateBlock(int epoch) {
+    EV << "generateBlock epoch:" << epoch << endl;
     generateTrustRating();
     EV << "generatedTR" << endl;
     Block* block = new Block();
+    block->epoch = epoch;
     block->setPrevHash(blockchain);
     for (auto& p : vehTrustRatings) {
         block->addTrustOffset(p.first, p.second);
@@ -193,6 +194,7 @@ void ApplicationLayerRSU::generateBlock() {
     vehTrustRatings.clear();
     block->generateHash();
     EV << "generateHash" << endl;
+    
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::ProposedBlock);
     msg->setSender(rsuID);
@@ -200,6 +202,9 @@ void ApplicationLayerRSU::generateBlock() {
     msg->setData(msgData.c_str());
     send(msg, "sessionOutput");
     EV << "sessiion msg sended" << endl;
+
+
+
     delete block;
 }
 
