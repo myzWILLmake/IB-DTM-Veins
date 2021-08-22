@@ -83,6 +83,11 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
             EV << "Received block: " << block->hash << endl;
             break;
         }
+        case InvalidBlock: {
+            string data = msg->getData();
+            HashVal hash = stoul(data);
+            onInvalidBlock(hash);
+        }
     }
 }
 
@@ -135,7 +140,8 @@ void ApplicationLayerRSU::verifyPendingBlock(int sender, HashVal hash) {
     Block* block = pendingBlocks[hash];
     if (block->proposer != rsuID) return;
     // Temp: return positive result here
-    bool verifyRes = true;
+    // bool verifyRes = true;
+    bool verifyRes = false;
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::OnVerifyBlock);
     msg->setSender(rsuID);
@@ -189,6 +195,16 @@ void ApplicationLayerRSU::onNewCommittee(string data) {
 
     EV << "RSU[" << rsuID << "] received NewCommittee" << endl;
     EV << "    proposer:" << proposer << " committee? " << isInCommittee(epoch) << endl;
+}
+
+void ApplicationLayerRSU::onInvalidBlock(HashVal hash) {
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    Block* block = pendingBlocks[hash];
+    int epoch = block->epoch;
+    epochCommittees.erase(epoch);
+
+    delete block;
+    pendingBlocks.erase(hash);
 }
 
 void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)

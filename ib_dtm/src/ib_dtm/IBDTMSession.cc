@@ -25,6 +25,43 @@ using namespace veins;
 using namespace ib_dtm;
 using namespace std;
 
+double IBDTMStake::initEffectiveStake = 0;
+double IBDTMStake::effectiveStakeUpperBound = 0;
+double IBDTMStake::effectiveStakeLowerBound = 0;
+int IBDTMStake::initITSstake = 0;
+double IBDTMStake::baseReward = 0;
+double IBDTMStake::penaltyFactor = 0;
+IBDTMStake::IBDTMStake() {
+    itsStake = initITSstake;
+    effectiveStake = initEffectiveStake;
+}
+
+IBDTMStakeVoting::IBDTMStakeVoting() {
+    effectiveStakeSum = 0;
+}
+
+bool IBDTMStakeVoting::areAllVoted() {
+    if (effectiveStakes.size() == 0) return false;
+    for (auto& p : effectiveStakes) {
+        if (votes.find(p.first) == votes.end()) return false;
+    }
+    return true;
+}
+
+bool IBDTMStakeVoting::checkVotes() {
+    if (effectiveStakeSum == 0) return false;
+    double positiveVoteStakes = 0;
+    for (auto& p : votes) {
+        if (p.second) {
+            positiveVoteStakes += effectiveStakes[p.first];
+        }
+    }
+
+    if (positiveVoteStakes / effectiveStakeSum > 2.0/3) {
+        return true;
+    } else return false;
+}
+
 int IBDTMSession::numInitStages() const {
     return std::max(cSimpleModule::numInitStages(), 3);
 }
@@ -37,13 +74,24 @@ void IBDTMSession::initialize(int stage) {
     if (stage == 1) {
         committeeSize = par("committeeSize");
         EV << "committeeSize:" << committeeSize << endl;
-        committee = vector<RSUIdx>(committeeSize);
+        // committee = vector<RSUIdx>(committeeSize);
+
+        IBDTMStake::initEffectiveStake = par("initEffectiveStake");
+        IBDTMStake::effectiveStakeUpperBound = par("effectiveStakeUpperBound");
+        IBDTMStake::effectiveStakeLowerBound = par("effectiveStakeLowerBound");
+        IBDTMStake::initITSstake = par("initITSstake");
+        IBDTMStake::baseReward = par("baseReward");
+        IBDTMStake::penaltyFactor = par("penaltyFactor");
     }
 
     if (stage == 2) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
         rsunum = gateSize("rsuInputs");
         EV << "rsugatesize rsunum = " << rsunum << endl;
+
+        for (int i=0; i<rsunum; i++) {
+            rsuStakes[i] = IBDTMStake();
+        }
 
         // Temp: test schduled msg
         cMessage* test = new cMessage("test");
@@ -70,6 +118,7 @@ void IBDTMSession::newCommittee() {
     epoch++;
 
     // committee
+    vector<RSUIdx> committee(committeeSize);
     vector<int> rsuIdxs(rsunum);
     for (int i=0; i<rsunum; i++) {
         rsuIdxs[i] = i;
@@ -82,9 +131,10 @@ void IBDTMSession::newCommittee() {
         committee[i] = rsuIdxs[i];
     }
 
+    epochCommittees[epoch] = committee;
     // proposer
     // Temp: pick the first of the committee
-    proposer = committee[0];
+    RSUIdx proposer = committee[0];
     string data = SessionMsgHelper::encodeNewCommittee(epoch, proposer, committee);
     for (auto id : committee) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
@@ -123,10 +173,17 @@ void IBDTMSession::onNewBlock(Block* block) {
         pendingBlocks.erase(block->hash);
     }
     pendingBlocks[block->hash] = block;
+    int epoch = block->epoch;
+    if (epochCommittees.find(epoch) == epochCommittees.end()) return;
+    auto& committee = epochCommittees[epoch];
 
-    //Temp: approve this block
-    // blocks[block->hash] = block;
-    // broadcastNewBlock(block->hash);
+    rsuVotes[block->epoch] = IBDTMStakeVoting();
+    auto& votes = rsuVotes[block->epoch];
+    votes.blockHash = block->hash;
+    for (auto& id : committee) {
+        votes.effectiveStakes[id] = rsuStakes[id].effectiveStake;
+        votes.effectiveStakeSum += rsuStakes[id].effectiveStake;
+    }
 }
 
 void IBDTMSession::onVoteBlock(int sender, string input) {
@@ -135,12 +192,28 @@ void IBDTMSession::onVoteBlock(int sender, string input) {
     HashVal hash = stoul(data[0]);
     bool vote = data[1] == "t";
 
-    EV << "IBDTMSession onVote: RSU[" << sender << "] vote [" << vote << "]" << endl; 
+    EV << "IBDTMSession onVote: RSU[" << sender << "] vote [" << vote << "]" << endl;
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    Block* block = pendingBlocks[hash];
+    int epoch = block->epoch;
+    auto& votes = rsuVotes[epoch];
+    votes.votes[sender] = vote;
+
+    if (votes.checkVotes()) {
+        // Block got approved
+        broadcastNewBlock(block->hash);
+    } else if (votes.areAllVoted()) {
+        // invalid Block
+        onInvalidBlock(block->hash);
+    }
+    // TODO: wating for timeout
 }
 
 void IBDTMSession::broadcastNewBlock(HashVal hash) {
-    auto block = blocks[hash];
-    string msgData = block->encode();
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    blocks[hash] = pendingBlocks[hash];
+    pendingBlocks.erase(hash);
+    string msgData = blocks[hash]->encode();
     
     for (int i=0; i<rsunum; i++) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
@@ -148,4 +221,22 @@ void IBDTMSession::broadcastNewBlock(HashVal hash) {
         msg->setData(msgData.c_str());
         send(msg, "rsuOutputs", i);
     }
+}
+
+void IBDTMSession::onInvalidBlock(HashVal hash) {
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    Block* block = pendingBlocks[hash];
+    int epoch = block->epoch;
+    auto& committee = epochCommittees[epoch];
+
+    for (auto& id : committee) {
+        IBDTMSessionMsg* msg = new IBDTMSessionMsg();
+        msg->setMsgType(SessionMsgType::InvalidBlock);
+        msg->setData(to_string(hash).c_str());
+        send(msg, "rsuOutputs", id);
+    }
+
+    rsuVotes.erase(epoch);
+    delete block;
+    pendingBlocks.erase(hash);
 }

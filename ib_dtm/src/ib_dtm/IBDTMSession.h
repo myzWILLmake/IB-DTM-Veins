@@ -21,6 +21,33 @@
 
 namespace ib_dtm {
 
+class IBDTMStake {
+public:
+    int itsStake;
+    double effectiveStake;
+
+    static double initEffectiveStake;
+    static double effectiveStakeUpperBound;
+    static double effectiveStakeLowerBound;
+    static int initITSstake;
+    static double baseReward;
+    static double penaltyFactor;
+
+    IBDTMStake(); 
+};
+
+class IBDTMStakeVoting {
+public:
+    HashVal blockHash;
+    double effectiveStakeSum;
+    std::map<RSUIdx, bool> votes;
+    std::map<RSUIdx, int> effectiveStakes;
+
+    IBDTMStakeVoting();
+    bool areAllVoted();
+    bool checkVotes();
+};
+
 class IB_DTM_API IBDTMSession : public cSimpleModule {
 protected:
     int numInitStages() const override;
@@ -31,10 +58,11 @@ protected:
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
     std::map<HashVal, Block*> pendingBlocks;
+    std::map<RSUIdx, IBDTMStake> rsuStakes;
 
     int epoch;
-    RSUIdx proposer;
-    vector<RSUIdx> committee;
+    std::map<int, vector<RSUIdx>> epochCommittees;
+    std::map<int, IBDTMStakeVoting> rsuVotes;
 
     /* ned veriable */
     int committeeSize;
@@ -44,6 +72,7 @@ protected:
     void onNewBlock(Block* block);
     void onVoteBlock(int sender, std::string data);
     void broadcastNewBlock(HashVal hash);
+    void onInvalidBlock(HashVal hash);
 };
 
 }

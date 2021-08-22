@@ -48,6 +48,7 @@ protected:
     void onProposedBlock(int proposer, Block* block);
     void verifyPendingBlock(int sender, HashVal hash);
     void onVerifyPendingBlock(int sender, std::string data);
+    void onInvalidBlock(HashVal hash);
     void generateTrustRating();
     void generateBlock(int epoch);
 };

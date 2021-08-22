@@ -17,7 +17,8 @@ enum RSUMsgType {
 
 enum SessionMsgType {
     NewCommittee,
-    CommittedBlock
+    CommittedBlock,
+    InvalidBlock
 };
 
 void split(const string& s, vector<string>& tokens, const string& delimiters = " ");

@@ -18,7 +18,16 @@ package org.car2x.veins.subprojects.ib_dtm;
 simple IBDTMSession {
 	parameters:
 	    @class(ib_dtm::IBDTMSession);
+
 	    int committeeSize = default(16);
+
+		double initEffectiveStake = default(48);
+		double effectiveStakeUpperBound = default(72);
+		double effectiveStakeLowerBound = default(24);
+		int initITSstake = default(512);
+
+		double baseReward = default(0.39774758);
+		double penaltyFactor = default(16);
 
 	gates:
 		input rsuInputs[];
