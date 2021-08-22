@@ -31,6 +31,7 @@ protected:
     int sessionInputGateId;
     std::map<VehIdx, std::vector<BeaconMsg*>> vehRecords;
     std::map<VehIdx, int> vehTrustRatings;
+    std::map<HashVal, Block*> pendingBlocks;
     std::map<HashVal, Block*> blocks;
     std::map<int, std::vector<RSUIdx>> epochCommittees;
     HashVal blockchain;
@@ -44,7 +45,9 @@ protected:
 
     void onNewCommittee(std::string data);
     bool isInCommittee(int epoch);
-
+    void onProposedBlock(int proposer, Block* block);
+    void verifyPendingBlock(int sender, HashVal hash);
+    void onVerifyPendingBlock(int sender, std::string data);
     void generateTrustRating();
     void generateBlock(int epoch);
 };

@@ -30,7 +30,7 @@ protected:
     int rsunum;
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
-    Block* pendingBlock;
+    std::map<HashVal, Block*> pendingBlocks;
 
     int epoch;
     RSUIdx proposer;
@@ -42,6 +42,7 @@ protected:
     void handleRSUMsg(int idx, cMessage* msg);
     void newCommittee();
     void onNewBlock(Block* block);
+    void onVoteBlock(int sender, std::string data);
     void broadcastNewBlock(HashVal hash);
 };
 

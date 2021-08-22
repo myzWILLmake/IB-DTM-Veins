@@ -62,10 +62,6 @@ void ApplicationLayerRSU::handleMessage(cMessage* msg) {
     }
 }
 
-void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* msg) {
-
-}
-
 void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
     IBDTMSessionMsg* msg = check_and_cast<IBDTMSessionMsg*>(m);
     SessionMsgType msgType = SessionMsgType(msg->getMsgType());
@@ -80,10 +76,96 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
             Block* block = new Block();
             block->decode(data);
             blocks[block->hash] = block;
+            if (pendingBlocks.find(block->hash) != pendingBlocks.end()) {
+                delete pendingBlocks[block->hash];
+                pendingBlocks.erase(block->hash);
+            }
             EV << "Received block: " << block->hash << endl;
             break;
         }
     }
+}
+
+void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* m) {
+    IBDTMRSUMsg* msg = check_and_cast<IBDTMRSUMsg*>(m);
+    RSUMsgType msgType = RSUMsgType(msg->getMsgType());
+    switch(msgType) {
+        case ProposedBlock: {
+            int sender = msg->getSender();
+            string data = msg->getData();
+            Block* block = new Block();
+            block->decode(data);
+            onProposedBlock(sender, block);
+            break;
+        }
+        case VerifyBlock: {
+            int sender = msg->getSender();
+            string data = msg->getData();
+            HashVal hash = stoul(data);
+            verifyPendingBlock(sender, hash);
+            break;
+        }
+        case OnVerifyBlock: {
+            int sender = msg->getSender();
+            string data = msg->getData();
+            onVerifyPendingBlock(sender, data);
+            break;
+        }
+    }
+}
+
+
+void ApplicationLayerRSU::onProposedBlock(int proposer, Block* block) {
+    if (!block) return;
+    if (pendingBlocks.find(block->hash) != pendingBlocks.end()) {
+        delete pendingBlocks[block->hash];
+        pendingBlocks.erase(block->hash);
+    }
+    pendingBlocks[block->hash] = block;
+    // Pseudo-verification
+    IBDTMRSUMsg* msg = new IBDTMRSUMsg();
+    msg->setMsgType(RSUMsgType::VerifyBlock);
+    msg->setSender(rsuID);
+    msg->setData(to_string(block->hash).c_str());
+    send(msg, "rsuOutputs", proposer);   
+}
+
+void ApplicationLayerRSU::verifyPendingBlock(int sender, HashVal hash) {
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    Block* block = pendingBlocks[hash];
+    if (block->proposer != rsuID) return;
+    // Temp: return positive result here
+    bool verifyRes = true;
+    IBDTMRSUMsg* msg = new IBDTMRSUMsg();
+    msg->setMsgType(RSUMsgType::OnVerifyBlock);
+    msg->setSender(rsuID);
+    string data = to_string(hash) + " ";
+    if (verifyRes) {
+        data += "t";
+    } else {
+        data += "f";
+    }
+    msg->setData(data.c_str());
+    send(msg, "rsuOutputs", sender);
+}
+
+void ApplicationLayerRSU::onVerifyPendingBlock(int sender, string input) {
+    vector<string> strs;
+    split(input, strs);
+    HashVal hash = stoul(strs[0]);
+    bool verifyRes = strs[1] == "t";
+    if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
+    IBDTMRSUMsg* msg = new IBDTMRSUMsg();
+    msg->setMsgType(RSUMsgType::VoteBlock);
+    msg->setSender(rsuID);
+    string data = to_string(hash) + " ";
+    if (verifyRes) {
+        data += "t";
+    } else {
+        data += "f";
+    }
+    msg->setData(data.c_str());
+    send(msg, "sessionOutput");
 }
 
 bool ApplicationLayerRSU::isInCommittee(int epoch) {
@@ -184,28 +266,36 @@ void ApplicationLayerRSU::generateTrustRating() {
 void ApplicationLayerRSU::generateBlock(int epoch) {
     EV << "generateBlock epoch:" << epoch << endl;
     generateTrustRating();
-    EV << "generatedTR" << endl;
     Block* block = new Block();
     block->epoch = epoch;
+    block->proposer = rsuID;
     block->setPrevHash(blockchain);
     for (auto& p : vehTrustRatings) {
         block->addTrustOffset(p.first, p.second);
     }
     vehTrustRatings.clear();
     block->generateHash();
-    EV << "generateHash" << endl;
-    
+    pendingBlocks[block->hash] = block;
+
+    string msgData = block->encode();
+
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::ProposedBlock);
     msg->setSender(rsuID);
-    string msgData = block->encode();
     msg->setData(msgData.c_str());
     send(msg, "sessionOutput");
-    EV << "sessiion msg sended" << endl;
 
-
-
-    delete block;
+    if (epochCommittees.find(epoch) != epochCommittees.end()) {
+        for (auto id : epochCommittees[epoch]) {
+            if (id != rsuID) {
+                IBDTMRSUMsg* msg = new IBDTMRSUMsg();
+                msg->setMsgType(RSUMsgType::ProposedBlock);
+                msg->setSender(rsuID);
+                msg->setData(msgData.c_str());
+                send(msg, "rsuOutputs", id);   
+            }
+        }   
+    }
 }
 
 // void ApplicationLayerRSU::handleSelfMsg(cMessage* msg) {

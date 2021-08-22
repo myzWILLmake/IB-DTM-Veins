@@ -107,17 +107,35 @@ void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {
             onNewBlock(block);
             break;
         }
+        case VoteBlock: {
+            int sender = msg->getSender();
+            string data = msg->getData();
+            onVoteBlock(sender, data);
+            break;
+        }
     }
 }
 
 void IBDTMSession::onNewBlock(Block* block) {
     EV << "onNewBlock" << endl;
-    //TODO: check block validation
-    pendingBlock = block;
-    //TODO: consensus progress
+    if (pendingBlocks.find(block->hash) != pendingBlocks.end()) {
+        delete pendingBlocks[block->hash];
+        pendingBlocks.erase(block->hash);
+    }
+    pendingBlocks[block->hash] = block;
+
     //Temp: approve this block
-    blocks[block->hash] = block;
-    broadcastNewBlock(block->hash);
+    // blocks[block->hash] = block;
+    // broadcastNewBlock(block->hash);
+}
+
+void IBDTMSession::onVoteBlock(int sender, string input) {
+    vector<string> data;
+    split(input, data);
+    HashVal hash = stoul(data[0]);
+    bool vote = data[1] == "t";
+
+    EV << "IBDTMSession onVote: RSU[" << sender << "] vote [" << vote << "]" << endl; 
 }
 
 void IBDTMSession::broadcastNewBlock(HashVal hash) {

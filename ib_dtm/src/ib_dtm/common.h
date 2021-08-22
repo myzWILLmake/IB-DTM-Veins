@@ -9,7 +9,10 @@ typedef int RSUIdx;
 typedef int VehIdx;
 
 enum RSUMsgType {
-   ProposedBlock
+   ProposedBlock,
+   VerifyBlock,
+   OnVerifyBlock,
+   VoteBlock
 };
 
 enum SessionMsgType {
@@ -43,6 +46,7 @@ protected:
     string doEncode();
 public:
     int epoch;
+    RSUIdx proposer;
     HashVal hash;
     HashVal prev;
 

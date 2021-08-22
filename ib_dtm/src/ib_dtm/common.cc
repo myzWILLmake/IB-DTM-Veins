@@ -92,7 +92,7 @@ string Block::encode() {
         generateHash();
     }
     string rawEncoded = doEncode();
-    string data = to_string(epoch) + " " +to_string(hash) + " " + rawEncoded;
+    string data = to_string(epoch) + " " + to_string(proposer) + " " + to_string(hash) + " " + rawEncoded;
     return data;
 }
 
@@ -100,10 +100,11 @@ void Block::decode(string input) {
     vector<string> data;
     split(input, data);
     epoch = stoi(data[0]);
-    hash = stoul(data[1]);
-    prev = stoul(data[2]);
+    proposer = stoi(data[1]);
+    hash = stoul(data[2]);
+    prev = stoul(data[3]);
 
-    if (data.size() <=3) return;
+    if (data.size() <=4) return;
     vector<string> trustOffsetStrs;
     split(data[2], trustOffsetStrs, ";");
     for (auto& str : trustOffsetStrs) {
