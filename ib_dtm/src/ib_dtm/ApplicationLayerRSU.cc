@@ -140,8 +140,7 @@ void ApplicationLayerRSU::verifyPendingBlock(int sender, HashVal hash) {
     Block* block = pendingBlocks[hash];
     if (block->proposer != rsuID) return;
     // Temp: return positive result here
-    // bool verifyRes = true;
-    bool verifyRes = false;
+     bool verifyRes = true;
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::OnVerifyBlock);
     msg->setSender(rsuID);
@@ -198,6 +197,7 @@ void ApplicationLayerRSU::onNewCommittee(string data) {
 }
 
 void ApplicationLayerRSU::onInvalidBlock(HashVal hash) {
+    EV << "RSU[" << rsuID << "] onInvalidBlock " << hash << endl;
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     Block* block = pendingBlocks[hash];
     int epoch = block->epoch;

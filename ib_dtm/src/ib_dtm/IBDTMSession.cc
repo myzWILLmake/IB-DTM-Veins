@@ -40,15 +40,21 @@ IBDTMStakeVoting::IBDTMStakeVoting() {
     effectiveStakeSum = 0;
 }
 
-bool IBDTMStakeVoting::areAllVoted() {
-    if (effectiveStakes.size() == 0) return false;
-    for (auto& p : effectiveStakes) {
-        if (votes.find(p.first) == votes.end()) return false;
+bool IBDTMStakeVoting::checkNegtiveVotes() {
+    if (effectiveStakeSum == 0) return false;
+    double negativeVoteStakes = 0;
+    for (auto& p : votes) {
+        if (!p.second) {
+            negativeVoteStakes += effectiveStakes[p.first];
+        }
     }
-    return true;
+
+    if (negativeVoteStakes / effectiveStakeSum >= 1.0/3) {
+        return true;
+    } else return false;
 }
 
-bool IBDTMStakeVoting::checkVotes() {
+bool IBDTMStakeVoting::checkPositiveVotes() {
     if (effectiveStakeSum == 0) return false;
     double positiveVoteStakes = 0;
     for (auto& p : votes) {
@@ -199,10 +205,10 @@ void IBDTMSession::onVoteBlock(int sender, string input) {
     auto& votes = rsuVotes[epoch];
     votes.votes[sender] = vote;
 
-    if (votes.checkVotes()) {
+    if (votes.checkPositiveVotes()) {
         // Block got approved
         broadcastNewBlock(block->hash);
-    } else if (votes.areAllVoted()) {
+    } else if (votes.checkNegtiveVotes()) {
         // invalid Block
         onInvalidBlock(block->hash);
     }

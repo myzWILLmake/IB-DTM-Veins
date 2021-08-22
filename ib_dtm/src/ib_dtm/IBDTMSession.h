@@ -44,8 +44,8 @@ public:
     std::map<RSUIdx, int> effectiveStakes;
 
     IBDTMStakeVoting();
-    bool areAllVoted();
-    bool checkVotes();
+    bool checkNegtiveVotes();
+    bool checkPositiveVotes();
 };
 
 class IB_DTM_API IBDTMSession : public cSimpleModule {
