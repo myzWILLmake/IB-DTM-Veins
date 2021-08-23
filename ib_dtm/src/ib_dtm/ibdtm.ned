@@ -30,6 +30,8 @@ simple IBDTMSession {
 		double baseReward = default(0.39774758);
 		double penaltyFactor = default(16);
 
+		double epochTickInterval = default(5);
+
 	gates:
 		input rsuInputs[];
 		output rsuOutputs[];

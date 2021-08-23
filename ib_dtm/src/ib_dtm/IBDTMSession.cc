@@ -105,6 +105,7 @@ void IBDTMSession::initialize(int stage) {
 
     if (stage == 1) {
         committeeSize = par("committeeSize");
+        epochTickInterval = par("epochTickInterval");
         EV << "committeeSize:" << committeeSize << endl;
         // committee = vector<RSUIdx>(committeeSize);
 
@@ -128,18 +129,30 @@ void IBDTMSession::initialize(int stage) {
             rsuStatus[i] = true;
         }
 
-        // Temp: test schduled msg
-        cMessage* test = new cMessage("test");
-        scheduleAt(0.2, test);
+        cMessage* tick = new cMessage("epochTick");
+        scheduleAt(0.5, tick);
     }
 }
 
+void IBDTMSession::epochTick() {
+    // check timeout
+    HashVal hash = epochBlocks[epoch];
+    if (hash != INVALID_BLOCK_HASH && pendingBlocks.find(hash) != pendingBlocks.end()) {
+        onInvalidBlock(hash);
+    }
+
+    epoch++;
+    newCommittee();
+
+    cMessage* msg = new cMessage("epochTick");
+    scheduleAt(simTime() + epochTickInterval, msg);
+}
 
 void IBDTMSession::handleMessage(cMessage* msg) {
     EV << "recevied msg at session" << endl;
     cGate* gate = msg->getArrivalGate();
     if (msg->isSelfMessage()) {
-        newCommittee();
+        epochTick();
     } else if (gate && gate->getBaseId() == rsuInputBaseGateId) {
         int idx = msg->getArrivalGate()->getIndex();
         handleRSUMsg(idx, msg);
@@ -150,8 +163,6 @@ void IBDTMSession::handleMessage(cMessage* msg) {
 
 void IBDTMSession::newCommittee() {
     // generate new proposer and committee
-    epoch++;
-
     // committee
     vector<int> rsuIdxs;
     for (int i=0; i<rsunum; i++) {
@@ -211,6 +222,7 @@ void IBDTMSession::onNewBlock(Block* block) {
     pendingBlocks[block->hash] = block;
     int epoch = block->epoch;
     if (epochCommittees.find(epoch) == epochCommittees.end()) return;
+    epochBlocks[epoch] = block->hash;
     auto& committee = epochCommittees[epoch];
 
     rsuVotes[block->epoch] = IBDTMStakeVoting();
@@ -269,6 +281,7 @@ void IBDTMSession::onInvalidBlock(HashVal hash) {
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     Block* block = pendingBlocks[hash];
     int epoch = block->epoch;
+    epochBlocks[epoch] = INVALID_BLOCK_HASH;
     auto& committee = epochCommittees[epoch];
 
     for (auto& id : committee) {

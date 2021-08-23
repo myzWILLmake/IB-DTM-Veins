@@ -8,6 +8,8 @@ typedef size_t HashVal;
 typedef int RSUIdx;
 typedef int VehIdx;
 
+const static HashVal INVALID_BLOCK_HASH = 0;
+
 enum RSUMsgType {
    ProposedBlock,
    VerifyBlock,

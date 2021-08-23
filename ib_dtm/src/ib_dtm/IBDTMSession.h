@@ -61,6 +61,7 @@ protected:
     
     int rsunum;
     int rsuInputBaseGateId;
+    std::map<int, HashVal> epochBlocks;
     std::map<HashVal, Block*> blocks;
     std::map<HashVal, Block*> pendingBlocks;
 
@@ -72,7 +73,8 @@ protected:
 
     /* ned veriable */
     int committeeSize;
-
+    double epochTickInterval;
+    void epochTick();
     void handleRSUMsg(int idx, cMessage* msg);
     void newCommittee();
     void onNewBlock(Block* block);
