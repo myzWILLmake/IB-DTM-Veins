@@ -106,7 +106,7 @@ void Block::decode(string input) {
 
     if (data.size() <=4) return;
     vector<string> trustOffsetStrs;
-    split(data[2], trustOffsetStrs, ";");
+    split(data[4], trustOffsetStrs, ";");
     for (auto& str : trustOffsetStrs) {
         int pos = str.find(":");
         VehIdx id = VehIdx(stoi(str.substr(0, pos)));
