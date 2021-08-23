@@ -159,6 +159,8 @@ void IBDTMSession::handleMessage(cMessage* msg) {
     } else {
         EV << "WARNING: NO PROCESS " << msg << endl;
     }
+
+    delete msg;
 }
 
 void IBDTMSession::newCommittee() {

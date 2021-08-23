@@ -89,6 +89,8 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
             onInvalidBlock(hash);
         }
     }
+
+    delete msg;
 }
 
 void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* m) {
@@ -117,6 +119,8 @@ void ApplicationLayerRSU::handleRSUMsg(int idx, cMessage* m) {
             break;
         }
     }
+
+    delete msg;
 }
 
 
@@ -269,6 +273,8 @@ void ApplicationLayerRSU::generateTrustRating() {
             } else if (rating < 0) {
                 vehTrustRatings[p.first] = -1;
             }
+
+            EV << "Trust Rating: veh[" << p.first << "] with " << vehTrustRatings[p.first] << endl;
         }
 
         for (auto msg : p.second) {
