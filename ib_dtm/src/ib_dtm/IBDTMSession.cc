@@ -18,6 +18,7 @@
 #include <random>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 
 Define_Module(ib_dtm::IBDTMSession);
 
@@ -29,11 +30,36 @@ double IBDTMStake::initEffectiveStake = 0;
 double IBDTMStake::effectiveStakeUpperBound = 0;
 double IBDTMStake::effectiveStakeLowerBound = 0;
 int IBDTMStake::initITSstake = 0;
+int IBDTMStake::numVehicles = 0;
 double IBDTMStake::baseReward = 0;
 double IBDTMStake::penaltyFactor = 0;
 IBDTMStake::IBDTMStake() {
     itsStake = initITSstake;
     effectiveStake = initEffectiveStake;
+}
+
+void IBDTMStake::getReward() {
+    double stakeFactor = double(itsStake) / numVehicles;
+    double reward = baseReward * sqrt(stakeFactor);
+    double before = effectiveStake;
+    effectiveStake += reward;
+    if (effectiveStake > effectiveStakeUpperBound) effectiveStake = effectiveStakeUpperBound;
+    EV << "RSU[" << id << "] effectiveStake get reward: " << before << " -> " << effectiveStake << endl;
+}
+
+void IBDTMStake::getPunishment() {
+    double stakeFactor = double(itsStake) / numVehicles;
+    double p = sqrt(stakeFactor);
+    if (p < 1) p = 1;
+    double penalty = baseReward * p * penaltyFactor;
+    double before = effectiveStake;
+    effectiveStake -= penalty;
+    // if (effectiveStake < effectiveStakeLowerBound) effectiveStake = effectiveStakeLowerBound;
+    EV << "RSU[" << id << "] effectiveStake get punishment: " << before << " -> " << effectiveStake << endl;
+}
+
+bool IBDTMStake::isLessLowerBound() {
+    return effectiveStake <= effectiveStakeLowerBound;
 }
 
 IBDTMStakeVoting::IBDTMStakeVoting() {
@@ -86,6 +112,7 @@ void IBDTMSession::initialize(int stage) {
         IBDTMStake::effectiveStakeUpperBound = par("effectiveStakeUpperBound");
         IBDTMStake::effectiveStakeLowerBound = par("effectiveStakeLowerBound");
         IBDTMStake::initITSstake = par("initITSstake");
+        IBDTMStake::numVehicles = par("numVehicles");
         IBDTMStake::baseReward = par("baseReward");
         IBDTMStake::penaltyFactor = par("penaltyFactor");
     }
@@ -97,6 +124,8 @@ void IBDTMSession::initialize(int stage) {
 
         for (int i=0; i<rsunum; i++) {
             rsuStakes[i] = IBDTMStake();
+            rsuStakes[i].id = i;
+            rsuStatus[i] = true;
         }
 
         // Temp: test schduled msg
@@ -124,16 +153,17 @@ void IBDTMSession::newCommittee() {
     epoch++;
 
     // committee
-    vector<RSUIdx> committee(committeeSize);
-    vector<int> rsuIdxs(rsunum);
+    vector<int> rsuIdxs;
     for (int i=0; i<rsunum; i++) {
-        rsuIdxs[i] = i;
+        if (rsuStatus[i]) rsuIdxs.push_back(i);
     }
     std::random_device rd;
     std::mt19937 g(rd());
     shuffle(rsuIdxs.begin(), rsuIdxs.end(), g);
 
-    for (int i=0; i<committeeSize; i++) {
+    int csize = rsuIdxs.size() < committeeSize ? rsuIdxs.size() : committeeSize;
+    vector<RSUIdx> committee(csize);
+    for (int i=0; i<csize; i++) {
         committee[i] = rsuIdxs[i];
     }
 
@@ -219,7 +249,9 @@ void IBDTMSession::broadcastNewBlock(HashVal hash) {
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     blocks[hash] = pendingBlocks[hash];
     pendingBlocks.erase(hash);
-    string msgData = blocks[hash]->encode();
+    Block* block = blocks[hash];
+    string msgData = block->encode();
+    int epoch = block->epoch;
     
     for (int i=0; i<rsunum; i++) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
@@ -227,6 +259,10 @@ void IBDTMSession::broadcastNewBlock(HashVal hash) {
         msg->setData(msgData.c_str());
         send(msg, "rsuOutputs", i);
     }
+
+    processStakeAdjustment(block, true);
+
+    rsuVotes.erase(epoch);
 }
 
 void IBDTMSession::onInvalidBlock(HashVal hash) {
@@ -242,7 +278,40 @@ void IBDTMSession::onInvalidBlock(HashVal hash) {
         send(msg, "rsuOutputs", id);
     }
 
+    processStakeAdjustment(block, false);
+
     rsuVotes.erase(epoch);
     delete block;
     pendingBlocks.erase(hash);
 }
+
+void IBDTMSession::kickoutRSU(RSUIdx id) {
+    EV << "RSU[" << id << "] kicked out from the network." << endl;
+    rsuStatus[id] = false;
+}
+
+void IBDTMSession::processStakeAdjustment(Block* block, bool result) {
+    if (!block) return;
+    int epoch = block->epoch;
+    if (epochCommittees.find(epoch) == epochCommittees.end()) return;
+    auto& committee = epochCommittees[epoch];
+    auto& votes = rsuVotes[epoch];
+
+    if (result) {
+        for (auto& p : votes.votes) {
+            if (p.second) rsuStakes[p.first].getReward();
+            else rsuStakes[p.first].getPunishment();
+            if (rsuStakes[p.first].isLessLowerBound()) kickoutRSU(p.first);
+        }
+
+        int recordCnt = block->getRecordCnt();
+        int before = rsuStakes[block->proposer].itsStake;
+        rsuStakes[block->proposer].itsStake += recordCnt;
+        EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].itsStake << endl;
+    } else {
+        for (auto& p : votes.votes) {
+            if (p.second) rsuStakes[p.first].getPunishment();
+            if (rsuStakes[p.first].isLessLowerBound()) kickoutRSU(p.first);
+        }
+    }
+} 

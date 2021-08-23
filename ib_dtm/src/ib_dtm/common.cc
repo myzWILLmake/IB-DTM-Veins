@@ -115,4 +115,8 @@ void Block::decode(string input) {
     }
 }
 
+int Block::getRecordCnt() {
+    return trustOffsets.size();
+}
+
 }

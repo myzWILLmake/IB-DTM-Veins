@@ -23,6 +23,7 @@ namespace ib_dtm {
 
 class IBDTMStake {
 public:
+    RSUIdx id;
     int itsStake;
     double effectiveStake;
 
@@ -30,10 +31,14 @@ public:
     static double effectiveStakeUpperBound;
     static double effectiveStakeLowerBound;
     static int initITSstake;
+    static int numVehicles;
     static double baseReward;
     static double penaltyFactor;
 
-    IBDTMStake(); 
+    IBDTMStake();
+    void getReward();
+    void getPunishment();
+    bool isLessLowerBound();
 };
 
 class IBDTMStakeVoting {
@@ -58,11 +63,12 @@ protected:
     int rsuInputBaseGateId;
     std::map<HashVal, Block*> blocks;
     std::map<HashVal, Block*> pendingBlocks;
-    std::map<RSUIdx, IBDTMStake> rsuStakes;
 
     int epoch;
     std::map<int, vector<RSUIdx>> epochCommittees;
     std::map<int, IBDTMStakeVoting> rsuVotes;
+    std::map<RSUIdx, bool> rsuStatus;
+    std::map<RSUIdx, IBDTMStake> rsuStakes;
 
     /* ned veriable */
     int committeeSize;
@@ -73,6 +79,8 @@ protected:
     void onVoteBlock(int sender, std::string data);
     void broadcastNewBlock(HashVal hash);
     void onInvalidBlock(HashVal hash);
+    void processStakeAdjustment(Block* block, bool result);
+    void kickoutRSU(RSUIdx id);
 };
 
 }

@@ -57,5 +57,6 @@ public:
     void setPrevHash(HashVal prev);
     string encode();
     void decode(string input);
+    int getRecordCnt();
 };
 }

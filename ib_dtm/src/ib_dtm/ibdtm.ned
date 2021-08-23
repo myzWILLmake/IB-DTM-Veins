@@ -25,6 +25,7 @@ simple IBDTMSession {
 		double effectiveStakeUpperBound = default(72);
 		double effectiveStakeLowerBound = default(24);
 		int initITSstake = default(512);
+		int numVehicles = default(8000);
 
 		double baseReward = default(0.39774758);
 		double penaltyFactor = default(16);
