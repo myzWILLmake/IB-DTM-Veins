@@ -258,7 +258,8 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
 
 void ApplicationLayerRSU::generateTrustRating() {
     for (auto p : vehRecords) {
-        if (p.second.size() >= 3) {
+        // Temp: record as trust rating
+        if (p.second.size() >= 1) {
             int rating = 0;
             for (auto msg : p.second) {
                 if (msg->isMalicious) {
@@ -274,7 +275,7 @@ void ApplicationLayerRSU::generateTrustRating() {
                 vehTrustRatings[p.first] = -1;
             }
 
-            EV << "Trust Rating: veh[" << p.first << "] with " << vehTrustRatings[p.first] << endl;
+            // EV << "Trust Rating: veh[" << p.first << "] with " << vehTrustRatings[p.first] << endl;
         }
 
         for (auto msg : p.second) {
