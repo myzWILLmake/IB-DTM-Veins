@@ -96,6 +96,7 @@ void RSUInserter::insertRSU() {
         cGate* sessionInGate = session->gate("rsuInputs", i);
         cGate* sessionOutGate = session->gate("rsuOutputs", i);
         sessionOutGate->connectTo(xSessionInGate);
+        sessionOutGate->getDisplayString().parse("ls=,0");
         xSessionOutGate->connectTo(sessionInGate);
 
         for (int j=i+1; j<rsunum; j++) {

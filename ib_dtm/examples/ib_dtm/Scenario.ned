@@ -28,16 +28,15 @@ import org.car2x.veins.subprojects.ib_dtm.IBDTMSession;
 
 network Scenario extends org.car2x.veins.nodes.Scenario
 {
-    @display("bgb=712,584");
     submodules:
         inserter: TraCIVehicleInserter {
-            @display("p=208,0");
+            @display("p=400,0;b=0,0");
         }
         rsu[0]: RSU;
         rsuInserter: RSUInserter {
-            @display("p=473,14");
+            @display("p=428.064,0;b=0,0");
         }
         ibdtmSession: IBDTMSession {
-            @display("p=402,14");
+            @display("p=373.96802,0;");
         }
 }
