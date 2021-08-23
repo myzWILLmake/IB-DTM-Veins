@@ -138,7 +138,16 @@ void IBDTMSession::epochTick() {
     // check timeout
     HashVal hash = epochBlocks[epoch];
     if (hash != INVALID_BLOCK_HASH && pendingBlocks.find(hash) != pendingBlocks.end()) {
-        onInvalidBlock(hash);
+        auto& votes = rsuVotes[epoch];
+        if (votes.checkPositiveVotes()) {
+            // Block got approved
+            broadcastNewBlock(hash);
+        } else if (votes.checkNegtiveVotes()) {
+            // invalid Block
+            onInvalidBlock(hash);
+        } else {
+            onInvalidBlock(hash);
+        }
     }
 
     epoch++;
@@ -182,8 +191,14 @@ void IBDTMSession::newCommittee() {
 
     epochCommittees[epoch] = committee;
     // proposer
-    // Temp: pick the first of the committee
-    RSUIdx proposer = committee[0];
+    // Temp: random pick
+    RSUIdx proposer;
+    if (rsuIdxs.size() <= csize) {
+        proposer = committee[0];
+    } else {
+        proposer = rsuIdxs[csize];
+    }
+
     string data = SessionMsgHelper::encodeNewCommittee(epoch, proposer, committee);
     for (auto id : committee) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
@@ -191,6 +206,12 @@ void IBDTMSession::newCommittee() {
         msg->setData(data.c_str());
         send(msg, "rsuOutputs", id);
     }
+
+    IBDTMSessionMsg* msg = new IBDTMSessionMsg();
+    msg->setMsgType(SessionMsgType::NewCommittee);
+    msg->setMsgType(SessionMsgType::NewCommittee);
+    msg->setData(data.c_str());
+    send(msg, "rsuOutputs", proposer);
 }
 
 void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {
@@ -249,14 +270,6 @@ void IBDTMSession::onVoteBlock(int sender, string input) {
     auto& votes = rsuVotes[epoch];
     votes.votes[sender] = vote;
 
-    if (votes.checkPositiveVotes()) {
-        // Block got approved
-        broadcastNewBlock(block->hash);
-    } else if (votes.checkNegtiveVotes()) {
-        // invalid Block
-        onInvalidBlock(block->hash);
-    }
-    // TODO: wating for timeout
 }
 
 void IBDTMSession::broadcastNewBlock(HashVal hash) {
@@ -293,6 +306,11 @@ void IBDTMSession::onInvalidBlock(HashVal hash) {
         send(msg, "rsuOutputs", id);
     }
 
+    IBDTMSessionMsg* msg = new IBDTMSessionMsg();
+    msg->setMsgType(SessionMsgType::InvalidBlock);
+    msg->setData(to_string(hash).c_str());
+    send(msg, "rsuOutputs", block->proposer);
+
     processStakeAdjustment(block, false);
 
     rsuVotes.erase(epoch);
@@ -319,11 +337,13 @@ void IBDTMSession::processStakeAdjustment(Block* block, bool result) {
             if (rsuStakes[p.first].isLessLowerBound()) kickoutRSU(p.first);
         }
 
+        rsuStakes[block->proposer].getReward();
         int recordCnt = block->getRecordCnt();
         int before = rsuStakes[block->proposer].itsStake;
         rsuStakes[block->proposer].itsStake += recordCnt;
         EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].itsStake << endl;
     } else {
+        rsuStakes[block->proposer].getPunishment();
         for (auto& p : votes.votes) {
             if (p.second) rsuStakes[p.first].getPunishment();
             if (rsuStakes[p.first].isLessLowerBound()) kickoutRSU(p.first);
