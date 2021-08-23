@@ -36,7 +36,7 @@ void ApplicationLayerRSU::initialize(int stage) {
     if (stage == 2) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
         sessionInputGateId = findGate("sessionInput");
-//        startService(Channel::sch2, rsuID, "rsu service");
+        startService(Channel::sch2, rsuID, "rsu service");
     }
 }
 
