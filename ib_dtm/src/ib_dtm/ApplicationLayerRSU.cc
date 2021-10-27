@@ -76,11 +76,12 @@ void ApplicationLayerRSU::handleSessionMsg(cMessage* m) {
             Block* block = new Block();
             block->decode(data);
             blocks[block->hash] = block;
+            blockchain = block->hash;
             if (pendingBlocks.find(block->hash) != pendingBlocks.end()) {
                 delete pendingBlocks[block->hash];
                 pendingBlocks.erase(block->hash);
             }
-            EV << "Received block: " << block->hash << endl;
+            // EV << "Received block: " << block->hash << endl;
             break;
         }
         case InvalidBlock: {
@@ -196,8 +197,8 @@ void ApplicationLayerRSU::onNewCommittee(string data) {
         generateBlock(epoch);
     }
 
-    EV << "RSU[" << rsuID << "] received NewCommittee" << endl;
-    EV << "    proposer:" << proposer << " committee? " << isInCommittee(epoch) << endl;
+    // EV << "RSU[" << rsuID << "] received NewCommittee" << endl;
+    // EV << "    proposer:" << proposer << " committee? " << isInCommittee(epoch) << endl;
 }
 
 void ApplicationLayerRSU::onInvalidBlock(HashVal hash) {
@@ -222,7 +223,7 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
             if (!isAck) return;
             int sender = wsm->getSender();
             std::string eventData = wsm->getEventData();
-            EV << "RSU[" << rsuID << "] received reports from VEH[" << sender << "]" << endl;
+            // EV << "RSU[" << rsuID << "] received reports from VEH[" << sender << "]" << endl;
             vector<BeaconMsg*> msgs;
             decodeEventData(eventData, msgs);
 
@@ -287,7 +288,6 @@ void ApplicationLayerRSU::generateTrustRating() {
 }
 
 void ApplicationLayerRSU::generateBlock(int epoch) {
-    EV << "generateBlock epoch:" << epoch << endl;
     generateTrustRating();
     Block* block = new Block();
     block->epoch = epoch;
@@ -299,6 +299,7 @@ void ApplicationLayerRSU::generateBlock(int epoch) {
     vehTrustRatings.clear();
     block->generateHash();
     pendingBlocks[block->hash] = block;
+    EV << "RSU[" << rsuID << "] generate block[" << block->hash << "]" << endl;
 
     string msgData = block->encode();
 

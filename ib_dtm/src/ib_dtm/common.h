@@ -45,13 +45,13 @@ public:
 
 class Block {
 protected:
-    map<VehIdx, int> trustOffsets;
     string doEncode();
 public:
     int epoch;
     RSUIdx proposer;
     HashVal hash;
     HashVal prev;
+    map<VehIdx, int> trustOffsets;
 
     Block();
     void generateHash();

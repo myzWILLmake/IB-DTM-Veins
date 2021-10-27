@@ -101,6 +101,7 @@ int IBDTMSession::numInitStages() const {
 void IBDTMSession::initialize(int stage) {
     cSimpleModule::initialize(stage);
     if (stage == 0) {
+        epoch = 0;
     }
 
     if (stage == 1) {
@@ -158,7 +159,6 @@ void IBDTMSession::epochTick() {
 }
 
 void IBDTMSession::handleMessage(cMessage* msg) {
-    EV << "recevied msg at session" << endl;
     cGate* gate = msg->getArrivalGate();
     if (msg->isSelfMessage()) {
         epochTick();
@@ -199,6 +199,15 @@ void IBDTMSession::newCommittee() {
         proposer = rsuIdxs[csize];
     }
 
+    EV << "IBDTMSession new epoch [" << epoch << "]:" << endl;
+    EV << "     proposer: " << proposer << endl;
+    string committeeStr = "";
+    for (auto& id : committee) {
+        committeeStr += to_string(id) + " ";
+    }
+    EV << "     committee: " + committeeStr << endl;
+
+
     string data = SessionMsgHelper::encodeNewCommittee(epoch, proposer, committee);
     for (auto id : committee) {
         IBDTMSessionMsg* msg = new IBDTMSessionMsg();
@@ -215,7 +224,6 @@ void IBDTMSession::newCommittee() {
 }
 
 void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {
-    EV << "handle RSU msg" << endl;
     IBDTMRSUMsg* msg = check_and_cast<IBDTMRSUMsg*>(m);
     RSUMsgType msgType = RSUMsgType(msg->getMsgType());
     switch(msgType) {
@@ -237,7 +245,6 @@ void IBDTMSession::handleRSUMsg(int idx, cMessage* m) {
 }
 
 void IBDTMSession::onNewBlock(Block* block) {
-    EV << "onNewBlock" << endl;
     if (pendingBlocks.find(block->hash) != pendingBlocks.end()) {
         delete pendingBlocks[block->hash];
         pendingBlocks.erase(block->hash);
@@ -263,7 +270,7 @@ void IBDTMSession::onVoteBlock(int sender, string input) {
     HashVal hash = stoul(data[0]);
     bool vote = data[1] == "t";
 
-    EV << "IBDTMSession onVote: RSU[" << sender << "] vote [" << vote << "]" << endl;
+    EV << "IBDTMSession RSU[" << sender << "] vote [" << vote << "]" << endl;
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     Block* block = pendingBlocks[hash];
     int epoch = block->epoch;
@@ -277,6 +284,15 @@ void IBDTMSession::broadcastNewBlock(HashVal hash) {
     blocks[hash] = pendingBlocks[hash];
     pendingBlocks.erase(hash);
     Block* block = blocks[hash];
+
+    EV << "IBDTMSession block[" << block->hash << "] committed:" << endl;
+    EV << "     Hash:" << block->hash << endl;
+    EV << "     Prev:" << block->prev << endl;
+    EV << "     TrustRatings:" << endl;
+    for (auto& p : block->trustOffsets) {
+        EV << "         Veh[" << p.first << "] Rating [" << p.second << "]" << endl;
+    }
+
     string msgData = block->encode();
     int epoch = block->epoch;
     
@@ -341,7 +357,9 @@ void IBDTMSession::processStakeAdjustment(Block* block, bool result) {
         int recordCnt = block->getRecordCnt();
         int before = rsuStakes[block->proposer].itsStake;
         rsuStakes[block->proposer].itsStake += recordCnt;
-        EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].itsStake << endl;
+        if (recordCnt > 0) {
+            EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].itsStake << endl;
+        }
     } else {
         rsuStakes[block->proposer].getPunishment();
         for (auto& p : votes.votes) {
