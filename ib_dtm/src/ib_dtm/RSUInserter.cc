@@ -12,12 +12,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
-
+#include <random>
+#include <algorithm>
 #include "RSUInserter.h"
 Define_Module(ib_dtm::RSUInserter);
 
 using namespace veins;
 using namespace ib_dtm;
+using namespace std;
 
 
 RSUInserter::RSUInserter() {
@@ -45,6 +47,7 @@ void RSUInserter::initialize(int stage)
     xGridSize = par("xGridSize");
     yGridSize = par("yGridSize");
     roadLength = par("roadLength");
+    maliciousNum = par("maliciousNum");
 
     insertRSU();
 }
@@ -53,17 +56,39 @@ void RSUInserter::insertRSU() {
     cModule* parentmod =  getParentModule();
     if (!parentmod) error("Parent Module not found");
 
-    cModuleType* nodeType = cModuleType::get("org.car2x.veins.nodes.RSU");
+    cModuleType* nodeType = cModuleType::get("org.car2x.veins.subprojects.ib_dtm.RSU");
     if (!nodeType) error("Module RSU not found");
 
     int rsunum = (xGridSize+1) * (yGridSize + 1);
+
+    vector<int> rsuIdxs;
+    for (int i=0; i<rsunum; i++) rsuIdxs.push_back(i);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    shuffle(rsuIdxs.begin(), rsuIdxs.end(), g);
+    EV << "malicious RSU:" << endl;
+    string s;
+    for (int i=0; i<maliciousNum; i++) {
+        s += to_string(rsuIdxs[i]) + " ";
+    }
+    EV << "     " << s << endl;
+
     int idx = 0;
     int xOffset = 25;
     int yOffset = 25;
     std::vector<cModule*> rsus;
     for (int x = 0; x<=xGridSize; x++) {
         for (int y = 0; y<=yGridSize; y++) {
-            cModule* mod = nodeType->create("rsu", parentmod, rsunum, idx++);
+            cModule* mod = nodeType->create("rsu", parentmod, rsunum, idx);
+            mod->par("isMalicious") = false;
+            for (int i=0; i<maliciousNum; i++) {
+                if (rsuIdxs[i] == idx) {
+                    mod->par("isMalicious") = true;
+                    break;
+                }
+            }
+            idx++;
+
             mod->finalizeParameters();
             // mod->setGateSize("rsuInputs", rsunum);
             // mod->setGateSize("rsuOutputs", rsunum);

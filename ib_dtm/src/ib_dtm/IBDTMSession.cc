@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <iostream>
+#include <fstream>
 
 Define_Module(ib_dtm::IBDTMSession);
 
@@ -107,6 +109,10 @@ void IBDTMSession::initialize(int stage) {
     if (stage == 1) {
         committeeSize = par("committeeSize");
         epochTickInterval = par("epochTickInterval");
+        epochSlots = par("epochSlots");
+        traceBackEpoches = par("traceBackEpoches");
+        enableIBDTM = par("enableIBDTM");
+        numVehicles = par("numVehicles");
         EV << "committeeSize:" << committeeSize << endl;
         // committee = vector<RSUIdx>(committeeSize);
 
@@ -140,7 +146,7 @@ void IBDTMSession::epochTick() {
     HashVal hash = epochBlocks[epoch];
     if (hash != INVALID_BLOCK_HASH && pendingBlocks.find(hash) != pendingBlocks.end()) {
         auto& votes = rsuVotes[epoch];
-        if (votes.checkPositiveVotes()) {
+        if (!enableIBDTM || votes.checkPositiveVotes()) {
             // Block got approved
             broadcastNewBlock(hash);
         } else if (votes.checkNegtiveVotes()) {
@@ -153,6 +159,20 @@ void IBDTMSession::epochTick() {
 
     epoch++;
     newCommittee();
+
+    if (epoch == 1000) {
+        dumpBlockChain();
+        // recorder.dumpVehTrustValues(0);
+        // recorder.dumpVehTrustValues(10);
+        // recorder.dumpVehTrustValues(55);
+        recorder.setMaliciousVehNum(20);
+        recorder.dumpMarkedMalicious();
+    }
+
+    if (epoch % epochSlots == 0) {
+        processVehTrustValue();
+        recorder.record(vehTrustValues, markedMalicious);
+    }
 
     cMessage* msg = new cMessage("epochTick");
     scheduleAt(simTime() + epochTickInterval, msg);
@@ -367,4 +387,51 @@ void IBDTMSession::processStakeAdjustment(Block* block, bool result) {
             if (rsuStakes[p.first].isLessLowerBound()) kickoutRSU(p.first);
         }
     }
-} 
+}
+
+void IBDTMSession::processVehTrustValue() {
+    for (int vehId = 0; vehId < numVehicles; vehId++) {
+        vehTrustValues[vehId] = 0;
+        markedMalicious[vehId] = false;
+    }
+
+    
+    for (int ep = max(0, epoch - traceBackEpoches); ep < epoch; ep++) {
+        auto block = blocks[epochBlocks[ep]];
+        if (block) {
+            auto tvoffsets = block->trustOffsets;
+            for (auto& p : tvoffsets) {
+                vehTrustValues[p.first] += p.second;
+            }
+        }
+    }
+
+    for (int vehId = 0; vehId < numVehicles; vehId++) {
+        if (!markedMalicious[vehId] && vehTrustValues[vehId] < 0) {
+            markedMalicious[vehId] = true;
+        }
+    }
+}
+
+void IBDTMSession::dumpBlockChain() {
+    string currTime = currentDateTime();
+    ofstream blockchainFile("results/blockchain_" + currTime);
+
+    if (!blockchainFile.is_open()) {
+        EV << "Cannot open file!" << endl;
+        return;
+    }
+
+    for (auto& p : epochBlocks) {
+        blockchainFile << p.first << " " << p.second << endl;
+        auto block = blocks[p.second];
+        if (block) {
+            blockchainFile << "     " << block->hash << "   " << block->prev << endl;
+            for (auto& vp : block->trustOffsets) {
+                blockchainFile <<  "        " << vp.first << " " << vp.second << endl;
+            }
+        }
+    }
+
+    blockchainFile.close();
+}

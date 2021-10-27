@@ -23,6 +23,7 @@
 #include "ib_dtm/ApplicationLayerTest.h"
 
 #include "ib_dtm/ApplicationLayerTestMessage_m.h"
+#include <cstdlib>
 
 using namespace veins;
 using namespace ib_dtm;
@@ -46,6 +47,8 @@ void ApplicationLayerTest::initialize(int stage)
 
         vehTotalNum = par("vehTotalNum");
         maliciousNum = par("maliciousNum");
+        maliciousPoss = par("maliciousPoss");
+        srand(((unsigned)time(NULL) + vehID % vehTotalNum));
         isMalicious = vehID % vehTotalNum < maliciousNum;
         if (isMalicious) {
             findHost()->getDisplayString().setTagArg("i", 1, "red");
@@ -78,6 +81,10 @@ void ApplicationLayerTest::recordBeaconMsg(int sender, bool isMaliciousMsg) {
     } else {
         recordData[sender]->time = simTime();
         recordData[sender]->isMalicious &= isMaliciousMsg;
+    }
+
+    if (isMalicious) {
+        recordData[sender]->isMalicious = !(recordData[sender]->isMalicious);
     }
 }
 
@@ -163,7 +170,15 @@ void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
         wsm->setMsgType(APPLICATION_MSG_TYPE_VEH);
         wsm->setSerial(this->msgSerialNo);
         wsm->setSender(this->vehID % vehTotalNum);
-        wsm->setIsMalicious(this->isMalicious);
+        if (this->isMalicious) {
+            if (rand()/double(RAND_MAX) < maliciousPoss) {
+                wsm->setIsMalicious(true);
+            } else {
+                wsm->setIsMalicious(false);
+            }
+        } else {
+            wsm->setIsMalicious(false);
+        }
         sendDown(wsm);
         lastDroveAt = simTime();
         nextInterval = 5 + vehRng->intRand(10);

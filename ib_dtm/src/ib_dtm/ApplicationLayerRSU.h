@@ -26,6 +26,7 @@ public:
 protected:
     int rsuID;
     bool inCommittee;
+    bool isMalicious;
 
     int rsuInputBaseGateId;
     int sessionInputGateId;

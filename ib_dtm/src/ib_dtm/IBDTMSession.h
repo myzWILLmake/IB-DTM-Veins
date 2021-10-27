@@ -17,6 +17,7 @@
 #include "ib_dtm/ib_dtm.h"
 #include "veins/veins.h"
 #include "common.h"
+#include "IBDTMRecorder.h"
 #include "ib_dtm/IBDTMSession_m.h"
 
 namespace ib_dtm {
@@ -70,10 +71,18 @@ protected:
     std::map<int, IBDTMStakeVoting> rsuVotes;
     std::map<RSUIdx, bool> rsuStatus;
     std::map<RSUIdx, IBDTMStake> rsuStakes;
+    std::map<VehIdx, int> vehTrustValues;
+    std::map<VehIdx, bool> markedMalicious;
+
+    int numVehicles;
+    IBDTMRecorder recorder;
 
     /* ned veriable */
     int committeeSize;
     double epochTickInterval;
+    int traceBackEpoches;
+    bool enableIBDTM;
+    int epochSlots;
     void epochTick();
     void handleRSUMsg(int idx, cMessage* msg);
     void newCommittee();
@@ -83,6 +92,9 @@ protected:
     void onInvalidBlock(HashVal hash);
     void processStakeAdjustment(Block* block, bool result);
     void kickoutRSU(RSUIdx id);
+
+    void processVehTrustValue();
+    void dumpBlockChain();
 };
 
 }

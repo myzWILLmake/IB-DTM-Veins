@@ -31,6 +31,9 @@ simple IBDTMSession {
 		double penaltyFactor = default(16);
 
 		double epochTickInterval = default(5);
+		int epochSlots = default(50);
+		int traceBackEpoches = default(150);
+		bool enableIBDTM = default(true);
 
 	gates:
 		input rsuInputs[];

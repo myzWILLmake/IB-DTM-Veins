@@ -1,5 +1,11 @@
 #pragma once
+#include <iostream>
+#include <string>
+#include <stdio.h>
+#include <time.h>
+
 #include "ib_dtm/ib_dtm.h"
+
 
 using namespace std;
 
@@ -24,6 +30,7 @@ enum SessionMsgType {
 };
 
 void split(const string& s, vector<string>& tokens, const string& delimiters = " ");
+const std::string currentDateTime();
 
 class SessionMsgHelper {
 public:

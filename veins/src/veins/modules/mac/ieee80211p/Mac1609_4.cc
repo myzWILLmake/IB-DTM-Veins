@@ -523,7 +523,7 @@ simtime_t Mac1609_4::timeLeftInSlot() const
 /* Will change the Service Channel on which the mac layer is listening and sending */
 void Mac1609_4::changeServiceChannel(Channel cN)
 {
-    ASSERT(useSCH);
+//    ASSERT(useSCH);
     mySCH = static_cast<Channel>(cN);
     if (mySCH != Channel::sch1 && mySCH != Channel::sch2 && mySCH != Channel::sch3 && mySCH != Channel::sch4) {
         throw cRuntimeError("This Service Channel doesnt exit: %d", cN);

@@ -30,11 +30,12 @@ module RSU
     parameters:
         string applType; //type of the application layer
         string nicType = default("Nic80211p"); // type of network interface card
+        bool isMalicious = default(false);
     gates:
-//        input rsuInputs[];
-//        output rsuOutputs[];
-//        input sessionInput;
-//        output sessionOutput;
+        input rsuInputs[];
+        output rsuOutputs[];
+        input sessionInput;
+        output sessionOutput;
         input veinsradioIn; // gate for sendDirect
     submodules:
         appl: <applType> like org.car2x.veins.base.modules.IBaseApplLayer {

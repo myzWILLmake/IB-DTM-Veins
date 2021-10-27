@@ -30,5 +30,5 @@ simple ApplicationLayerTest extends DemoBaseApplLayer
  		@display("i=block/app2");
  		int vehTotalNum = default(20);
  		int maliciousNum = default(1);
-        
+        double maliciousPoss = default(1);
 }

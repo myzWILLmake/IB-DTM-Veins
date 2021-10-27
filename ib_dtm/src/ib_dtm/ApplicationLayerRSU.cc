@@ -37,6 +37,11 @@ void ApplicationLayerRSU::initialize(int stage) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
         sessionInputGateId = findGate("sessionInput");
         startService(Channel::sch2, rsuID, "rsu service");
+        isMalicious = getParentModule()->par("isMalicious");
+
+        if (isMalicious) {
+            findHost()->getDisplayString().setTagArg("i", 1, "red");
+        }
     }
 }
 
@@ -144,8 +149,8 @@ void ApplicationLayerRSU::verifyPendingBlock(int sender, HashVal hash) {
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     Block* block = pendingBlocks[hash];
     if (block->proposer != rsuID) return;
-    // Temp: return positive result here
-     bool verifyRes = true;
+    bool verifyRes = true;
+    if (isMalicious) verifyRes = false;
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::OnVerifyBlock);
     msg->setSender(rsuID);
@@ -270,11 +275,20 @@ void ApplicationLayerRSU::generateTrustRating() {
                 }
             }
 
-            if (rating > 0) {
-                vehTrustRatings[p.first] = 1;
-            } else if (rating < 0) {
-                vehTrustRatings[p.first] = -1;
+            if (isMalicious) {
+                if (rating > 0) {
+                    vehTrustRatings[p.first] = -1;
+                } else if (rating < 0) {
+                    vehTrustRatings[p.first] = 1;
+                }
+            } else {
+                if (rating > 0) {
+                    vehTrustRatings[p.first] = 1;
+                } else if (rating < 0) {
+                    vehTrustRatings[p.first] = -1;
+                }
             }
+
 
             // EV << "Trust Rating: veh[" << p.first << "] with " << vehTrustRatings[p.first] << endl;
         }

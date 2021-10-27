@@ -30,6 +30,7 @@ protected:
     int xGridSize;
     int yGridSize;
     double roadLength;
+    int maliciousNum;
 };
 
 }
