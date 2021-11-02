@@ -84,7 +84,8 @@ void ApplicationLayerTest::recordBeaconMsg(int sender, bool isMaliciousMsg) {
     }
 
     if (isMalicious) {
-        recordData[sender]->isMalicious = !(recordData[sender]->isMalicious);
+        bool origin = recordData[sender]->isMalicious;
+        recordData[sender]->isMalicious = !origin;
     }
 }
 

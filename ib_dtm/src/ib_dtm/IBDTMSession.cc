@@ -56,7 +56,7 @@ void IBDTMStake::getPunishment() {
     double penalty = baseReward * p * penaltyFactor;
     double before = effectiveStake;
     effectiveStake -= penalty;
-    // if (effectiveStake < effectiveStakeLowerBound) effectiveStake = effectiveStakeLowerBound;
+    if (effectiveStake < effectiveStakeLowerBound) effectiveStake = effectiveStakeLowerBound;
     EV << "RSU[" << id << "] effectiveStake get punishment: " << before << " -> " << effectiveStake << endl;
 }
 
@@ -165,7 +165,7 @@ void IBDTMSession::epochTick() {
         // recorder.dumpVehTrustValues(0);
         // recorder.dumpVehTrustValues(10);
         // recorder.dumpVehTrustValues(55);
-        recorder.setMaliciousVehNum(20);
+        recorder.setMaliciousVehNum(40);
         recorder.dumpMarkedMalicious();
     }
 
@@ -355,6 +355,7 @@ void IBDTMSession::onInvalidBlock(HashVal hash) {
 }
 
 void IBDTMSession::kickoutRSU(RSUIdx id) {
+    if (!enableIBDTM) return;
     EV << "RSU[" << id << "] kicked out from the network." << endl;
     rsuStatus[id] = false;
 }
@@ -423,10 +424,10 @@ void IBDTMSession::dumpBlockChain() {
     }
 
     for (auto& p : epochBlocks) {
-        blockchainFile << p.first << " " << p.second << endl;
         auto block = blocks[p.second];
+        blockchainFile << p.first << " " << p.second << endl;
         if (block) {
-            blockchainFile << "     " << block->hash << "   " << block->prev << endl;
+            blockchainFile << "     " << block->proposer << "   " << block->prev << endl;
             for (auto& vp : block->trustOffsets) {
                 blockchainFile <<  "        " << vp.first << " " << vp.second << endl;
             }

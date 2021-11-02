@@ -32,6 +32,8 @@ void ApplicationLayerRSU::initialize(int stage) {
         rsuID = getParentModule()->getIndex();
         blockchain = 0;
         inCommittee = false;
+        maliciousVehNum = 40;
+        vehTotalNum = 200;
     }
     if (stage == 2) {
         rsuInputBaseGateId = findGate("rsuInputs", 0);
@@ -174,7 +176,7 @@ void ApplicationLayerRSU::onVerifyPendingBlock(int sender, string input) {
     msg->setMsgType(RSUMsgType::VoteBlock);
     msg->setSender(rsuID);
     string data = to_string(hash) + " ";
-    if (verifyRes) {
+    if (verifyRes != isMalicious) {
         data += "t";
     } else {
         data += "f";
@@ -264,7 +266,6 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
 
 void ApplicationLayerRSU::generateTrustRating() {
     for (auto p : vehRecords) {
-        // Temp: record as trust rating
         if (p.second.size() >= 1) {
             int rating = 0;
             for (auto msg : p.second) {
@@ -275,21 +276,17 @@ void ApplicationLayerRSU::generateTrustRating() {
                 }
             }
 
-            if (isMalicious) {
-                if (rating > 0) {
-                    vehTrustRatings[p.first] = -1;
-                } else if (rating < 0) {
-                    vehTrustRatings[p.first] = 1;
-                }
-            } else {
-                if (rating > 0) {
-                    vehTrustRatings[p.first] = 1;
-                } else if (rating < 0) {
-                    vehTrustRatings[p.first] = -1;
-                }
+            if (rating > 0) {
+                vehTrustRatings[p.first] = 1;
+            } else if (rating < 0) {
+                vehTrustRatings[p.first] = -1;
             }
 
-
+            // altered
+            if (isMalicious) {
+                if (p.first < maliciousVehNum) vehTrustRatings[p.first] = 1;
+                else vehTrustRatings[p.first] = -1;
+            }
             // EV << "Trust Rating: veh[" << p.first << "] with " << vehTrustRatings[p.first] << endl;
         }
 
@@ -299,6 +296,16 @@ void ApplicationLayerRSU::generateTrustRating() {
     }
 
     vehRecords.clear();
+
+    // forged
+    if (isMalicious) {
+        for (int i=0; i<10; i++) {
+            VehIdx id = std::rand() % vehTotalNum;
+            if (id < maliciousVehNum) vehTrustRatings[id] = 1;
+            else vehTrustRatings[id] = -1;
+        }
+    }
+
 }
 
 void ApplicationLayerRSU::generateBlock(int epoch) {

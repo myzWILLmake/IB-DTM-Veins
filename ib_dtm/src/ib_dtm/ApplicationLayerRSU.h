@@ -27,6 +27,8 @@ protected:
     int rsuID;
     bool inCommittee;
     bool isMalicious;
+    int maliciousVehNum;
+    int vehTotalNum;
 
     int rsuInputBaseGateId;
     int sessionInputGateId;

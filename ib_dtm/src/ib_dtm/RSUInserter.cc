@@ -61,6 +61,7 @@ void RSUInserter::insertRSU() {
 
     int rsunum = (xGridSize+1) * (yGridSize + 1);
 
+    // vector<int> rsuIdxs{36, 37,38,39,40, 47,48,49,50,51, 58,59,60,61,62, 69,70,71,72,73};
     vector<int> rsuIdxs;
     for (int i=0; i<rsunum; i++) rsuIdxs.push_back(i);
     std::random_device rd;
