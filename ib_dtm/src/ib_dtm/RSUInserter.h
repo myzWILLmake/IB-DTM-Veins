@@ -31,6 +31,7 @@ protected:
     int yGridSize;
     double roadLength;
     int maliciousNum;
+    double maliciousPoss;
 };
 
 }

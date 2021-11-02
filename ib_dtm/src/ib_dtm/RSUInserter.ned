@@ -24,4 +24,5 @@ simple RSUInserter {
 	    int yGridSize = default(3);
 	    double roadLength = default(100.0);
 		int maliciousNum = default(0);
+		double maliciousPoss = default(1);
 }

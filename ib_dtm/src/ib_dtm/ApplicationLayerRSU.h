@@ -28,6 +28,7 @@ protected:
     bool inCommittee;
     bool isMalicious;
     int maliciousVehNum;
+    double maliciousPoss;
     int vehTotalNum;
 
     int rsuInputBaseGateId;
@@ -52,7 +53,7 @@ protected:
     void verifyPendingBlock(int sender, HashVal hash);
     void onVerifyPendingBlock(int sender, std::string data);
     void onInvalidBlock(HashVal hash);
-    void generateTrustRating();
+    void generateTrustRating(bool doMalicious);
     void generateBlock(int epoch);
 };
 

@@ -4,18 +4,21 @@ using namespace std;
 namespace ib_dtm {
     
 IBDTMRecorder::IBDTMRecorder() {
-    idx = 0;
 }
 
 void IBDTMRecorder::setMaliciousVehNum(int num) {
     maliciousNum = num;
 }
 
-void IBDTMRecorder::record(map<VehIdx, int> tvo, map<VehIdx, bool> marked, map<RSUIdx, IBDTMStake>& rsuStakes) {
-    idx++;
-    vehTrustValues[idx] = tvo;
-    markedMalicious[idx] = marked;
+void IBDTMRecorder::record(map<VehIdx, int> tvo, map<VehIdx, bool> marked) {
+    vehTrustValues.push_back(tvo);
+    markedMalicious.push_back(marked);
+}
 
+void IBDTMRecorder::recordStakes(map<RSUIdx, IBDTMStake>& rsuStakes) {
+    rsuEffeStakes.push_back(map<RSUIdx, double>{});
+    rsuITSStakes.push_back(map<RSUIdx, int>{});
+    int idx = rsuEffeStakes.size() - 1;
     for (auto &p : rsuStakes) {
         rsuEffeStakes[idx][p.first] = p.second.effectiveStake;
         rsuITSStakes[idx][p.first] = p.second.getITSStake(0);
@@ -31,8 +34,8 @@ void IBDTMRecorder::dumpVehTrustValues(VehIdx id) {
         return;
     }
 
-    for (auto &p : vehTrustValues) {
-        tvoFile << p.first << "," << p.second[id] << endl;
+    for (int i=0; i<vehTrustValues.size(); i++) {
+        tvoFile << i << "," << vehTrustValues[i][id] << endl;
     }
 
     tvoFile.close();
@@ -47,8 +50,8 @@ void IBDTMRecorder::dumpRSUStakes(RSUIdx id) {
         return;
     }  
 
-    for (auto &p : rsuEffeStakes) {
-        rsuFile << p.first << "," << p.second[id] << "," << rsuITSStakes[p.first][id] << endl;
+    for (int i=0; i<rsuEffeStakes.size(); i++) {
+        rsuFile << i << "," << rsuEffeStakes[i][id] << "," << rsuITSStakes[i][id] << endl;
     }
 
     rsuFile.close();
@@ -63,18 +66,20 @@ void IBDTMRecorder::dumpMarkedMalicious() {
         return;
     }
 
-    for (auto &p : markedMalicious) {
+    // for (auto &p : markedMalicious) {
+    for (int i=0; i<markedMalicious.size(); i++) {
+        auto& p = markedMalicious[i];
         int TP = 0;
         int TN = 0;
         int FP = 0;
         int FN = 0;
-        for (auto &vp : p.second) {
+        for (auto &vp : p) {
             if (vp.first < maliciousNum && vp.second) TP++;
             else if (vp.first < maliciousNum && !vp.second) FN++;
             else if (vp.first >= maliciousNum && vp.second) FP++;
             else if (vp.first >= maliciousNum && !vp.second) TN++;
         }
-        maliciousFile << p.first << "," << TP << "," << TN << "," << FP << "," << FN << endl;
+        maliciousFile << i << "," << TP << "," << TN << "," << FP << "," << FN << endl;
     }
 
 

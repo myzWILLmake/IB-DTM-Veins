@@ -63,6 +63,7 @@ void BeaconMsg::decode(string input) {
 Block::Block() {
     prev = 0;
     hash = 0;
+    isForged = false;
 }
 
 string Block::doEncode() {
@@ -185,6 +186,7 @@ int IBDTMStake::getITSStake(int epoch) {
     for (auto &p : itsStakeMap) {
         cnt += p.second;
     }
+    if (cnt < 1) cnt = 1;
     return cnt;
 }
 

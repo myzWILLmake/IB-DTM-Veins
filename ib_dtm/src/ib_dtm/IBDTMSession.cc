@@ -106,8 +106,11 @@ void IBDTMSession::epochTick() {
 
     if (epoch % epochSlots == 0) {
         processVehTrustValue();
-        recorder.record(vehTrustValues, markedMalicious, rsuStakes);
+        recorder.record(vehTrustValues, markedMalicious);
     }
+
+    recorder.recordStakes(rsuStakes);
+
 
     cMessage* msg = new cMessage("epochTick");
     scheduleAt(simTime() + epochTickInterval, msg);

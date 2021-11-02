@@ -59,6 +59,7 @@ public:
     HashVal hash;
     HashVal prev;
     map<VehIdx, int> trustOffsets;
+    bool isForged;
 
     Block();
     void generateHash();

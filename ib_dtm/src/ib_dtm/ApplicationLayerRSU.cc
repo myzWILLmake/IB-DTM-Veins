@@ -40,6 +40,7 @@ void ApplicationLayerRSU::initialize(int stage) {
         sessionInputGateId = findGate("sessionInput");
         startService(Channel::sch2, rsuID, "rsu service");
         isMalicious = getParentModule()->par("isMalicious");
+        maliciousPoss = getParentModule()->par("maliciousPoss");
 
         if (isMalicious) {
             findHost()->getDisplayString().setTagArg("i", 1, "red");
@@ -151,8 +152,7 @@ void ApplicationLayerRSU::verifyPendingBlock(int sender, HashVal hash) {
     if (pendingBlocks.find(hash) == pendingBlocks.end()) return;
     Block* block = pendingBlocks[hash];
     if (block->proposer != rsuID) return;
-    bool verifyRes = true;
-    if (isMalicious) verifyRes = false;
+    bool verifyRes = block->isForged == false;
     IBDTMRSUMsg* msg = new IBDTMRSUMsg();
     msg->setMsgType(RSUMsgType::OnVerifyBlock);
     msg->setSender(rsuID);
@@ -176,7 +176,13 @@ void ApplicationLayerRSU::onVerifyPendingBlock(int sender, string input) {
     msg->setMsgType(RSUMsgType::VoteBlock);
     msg->setSender(rsuID);
     string data = to_string(hash) + " ";
-    if (verifyRes != isMalicious) {
+    bool doMalicious = false;
+    if (isMalicious) {
+        if (rand()/double(RAND_MAX) < maliciousPoss) {
+            doMalicious = true;
+        }
+    }
+    if (verifyRes != doMalicious) {
         data += "t";
     } else {
         data += "f";
@@ -264,7 +270,7 @@ void ApplicationLayerRSU::onWSM(BaseFrame1609_4* frame)
     }
 }
 
-void ApplicationLayerRSU::generateTrustRating() {
+void ApplicationLayerRSU::generateTrustRating(bool doMalicious) {
     for (auto p : vehRecords) {
         if (p.second.size() >= 1) {
             int rating = 0;
@@ -283,7 +289,7 @@ void ApplicationLayerRSU::generateTrustRating() {
             }
 
             // altered
-            if (isMalicious) {
+            if (doMalicious) {
                 if (p.first < maliciousVehNum) vehTrustRatings[p.first] = 1;
                 else vehTrustRatings[p.first] = -1;
             }
@@ -298,7 +304,7 @@ void ApplicationLayerRSU::generateTrustRating() {
     vehRecords.clear();
 
     // forged
-    if (isMalicious) {
+    if (doMalicious) {
         for (int i=0; i<10; i++) {
             VehIdx id = std::rand() % vehTotalNum;
             if (id < maliciousVehNum) vehTrustRatings[id] = 1;
@@ -309,8 +315,15 @@ void ApplicationLayerRSU::generateTrustRating() {
 }
 
 void ApplicationLayerRSU::generateBlock(int epoch) {
-    generateTrustRating();
+    bool doMalicious = false;
+    if (isMalicious) {
+        if (rand()/double(RAND_MAX) < maliciousPoss) {
+            doMalicious = true;
+        }
+    }
+    generateTrustRating(doMalicious);
     Block* block = new Block();
+    block->isForged = doMalicious;
     block->epoch = epoch;
     block->proposer = rsuID;
     block->setPrevHash(blockchain);

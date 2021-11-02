@@ -48,6 +48,7 @@ void RSUInserter::initialize(int stage)
     yGridSize = par("yGridSize");
     roadLength = par("roadLength");
     maliciousNum = par("maliciousNum");
+    maliciousPoss = par("maliciousPoss");
 
     insertRSU();
 }
@@ -91,6 +92,7 @@ void RSUInserter::insertRSU() {
             for (int i=0; i<maliciousNum; i++) {
                 if (maliciousRSUIds[i] == idx) {
                     mod->par("isMalicious") = true;
+                    mod->par("maliciousPoss") = maliciousPoss;
                     break;
                 }
             }

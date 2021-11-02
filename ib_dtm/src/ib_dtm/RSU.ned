@@ -31,6 +31,7 @@ module RSU
         string applType; //type of the application layer
         string nicType = default("Nic80211p"); // type of network interface card
         bool isMalicious = default(false);
+        double maliciousPoss = default(1);
     gates:
         input rsuInputs[];
         output rsuOutputs[];
