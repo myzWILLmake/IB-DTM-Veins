@@ -68,4 +68,42 @@ public:
     void decode(string input);
     int getRecordCnt();
 };
+
+class IBDTMStake {
+public:
+    RSUIdx id;
+    // int itsStake;
+    double effectiveStake;
+    std::map<int, int> itsStakeMap;
+
+    static double initEffectiveStake;
+    static double effectiveStakeUpperBound;
+    static double effectiveStakeLowerBound;
+    static int initITSstake;
+    static int numVehicles;
+    static double baseReward;
+    static double penaltyFactor;
+    static int traceBackEpoches;
+
+    IBDTMStake();
+    void checkITSStake(int epoch);
+    void addITSStake(int epoch, int num);
+    int getITSStake(int epoch);
+    void getReward();
+    void getPunishment();
+    bool isLessLowerBound();
+};
+
+class IBDTMStakeVoting {
+public:
+    HashVal blockHash;
+    double effectiveStakeSum;
+    std::map<RSUIdx, bool> votes;
+    std::map<RSUIdx, int> effectiveStakes;
+
+    IBDTMStakeVoting();
+    bool checkNegtiveVotes();
+    bool checkPositiveVotes();
+};
+
 }

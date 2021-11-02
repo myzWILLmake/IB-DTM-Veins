@@ -14,10 +14,13 @@ public:
     int maliciousNum;
     map<int, map<VehIdx, int>> vehTrustValues;
     map<int, map<VehIdx, bool>> markedMalicious;
+    map<int, map<RSUIdx, int>> rsuEffeStakes;
+    map<int, map<RSUIdx, int>> rsuITSStakes;
 
     IBDTMRecorder();
     void setMaliciousVehNum(int num);
-    void record(map<VehIdx, int> tvo, map<VehIdx, bool> marked);
+    void record(map<VehIdx, int> tvo, map<VehIdx, bool> marked, map<RSUIdx, IBDTMStake>& rsuStakes);
+    void dumpRSUStakes(RSUIdx id);
     void dumpVehTrustValues(VehIdx id);
     void dumpMarkedMalicious();
 };

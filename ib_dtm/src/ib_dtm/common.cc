@@ -131,4 +131,97 @@ const std::string currentDateTime() {
     return buf;
 }
 
+double IBDTMStake::initEffectiveStake = 0;
+double IBDTMStake::effectiveStakeUpperBound = 0;
+double IBDTMStake::effectiveStakeLowerBound = 0;
+int IBDTMStake::initITSstake = 0;
+int IBDTMStake::numVehicles = 0;
+double IBDTMStake::baseReward = 0;
+double IBDTMStake::penaltyFactor = 0;
+int IBDTMStake::traceBackEpoches = 0;
+IBDTMStake::IBDTMStake() {
+    itsStakeMap[0] = initITSstake;
+    effectiveStake = initEffectiveStake;
+}
+
+void IBDTMStake::getReward() {
+    double stakeFactor = double(getITSStake(0)) / numVehicles;
+    double reward = baseReward * sqrt(stakeFactor);
+    double before = effectiveStake;
+    effectiveStake += reward;
+    if (effectiveStake > effectiveStakeUpperBound) effectiveStake = effectiveStakeUpperBound;
+    EV << "RSU[" << id << "] effectiveStake get reward: " << before << " -> " << effectiveStake << endl;
+}
+
+void IBDTMStake::getPunishment() {
+    double stakeFactor = double(getITSStake(0)) / numVehicles;
+    double p = sqrt(stakeFactor);
+    if (p < 1) p = 1;
+    double penalty = baseReward * p * penaltyFactor;
+    double before = effectiveStake;
+    effectiveStake -= penalty;
+    if (effectiveStake < effectiveStakeLowerBound) effectiveStake = effectiveStakeLowerBound;
+    EV << "RSU[" << id << "] effectiveStake get punishment: " << before << " -> " << effectiveStake << endl;
+}
+
+void IBDTMStake::checkITSStake(int epoch) {
+    for (auto it = itsStakeMap.begin(); it != itsStakeMap.end(); ) {
+        if (it->first <= epoch - IBDTMStake::traceBackEpoches) {
+            it = itsStakeMap.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
+void IBDTMStake::addITSStake(int epoch, int num) {
+    checkITSStake(epoch);
+    itsStakeMap[epoch] = num;
+}
+
+int IBDTMStake::getITSStake(int epoch) {
+    if (epoch != 0) checkITSStake(epoch);
+    int cnt = 0;
+    for (auto &p : itsStakeMap) {
+        cnt += p.second;
+    }
+    return cnt;
+}
+
+bool IBDTMStake::isLessLowerBound() {
+    return effectiveStake <= effectiveStakeLowerBound;
+}
+
+IBDTMStakeVoting::IBDTMStakeVoting() {
+    effectiveStakeSum = 0;
+}
+
+bool IBDTMStakeVoting::checkNegtiveVotes() {
+    if (effectiveStakeSum == 0) return false;
+    double negativeVoteStakes = 0;
+    for (auto& p : votes) {
+        if (!p.second) {
+            negativeVoteStakes += effectiveStakes[p.first];
+        }
+    }
+
+    if (negativeVoteStakes / effectiveStakeSum >= 1.0/3) {
+        return true;
+    } else return false;
+}
+
+bool IBDTMStakeVoting::checkPositiveVotes() {
+    if (effectiveStakeSum == 0) return false;
+    double positiveVoteStakes = 0;
+    for (auto& p : votes) {
+        if (p.second) {
+            positiveVoteStakes += effectiveStakes[p.first];
+        }
+    }
+
+    if (positiveVoteStakes / effectiveStakeSum > 2.0/3) {
+        return true;
+    } else return false;
+}
+
 }

@@ -28,74 +28,6 @@ using namespace veins;
 using namespace ib_dtm;
 using namespace std;
 
-double IBDTMStake::initEffectiveStake = 0;
-double IBDTMStake::effectiveStakeUpperBound = 0;
-double IBDTMStake::effectiveStakeLowerBound = 0;
-int IBDTMStake::initITSstake = 0;
-int IBDTMStake::numVehicles = 0;
-double IBDTMStake::baseReward = 0;
-double IBDTMStake::penaltyFactor = 0;
-IBDTMStake::IBDTMStake() {
-    itsStake = initITSstake;
-    effectiveStake = initEffectiveStake;
-}
-
-void IBDTMStake::getReward() {
-    double stakeFactor = double(itsStake) / numVehicles;
-    double reward = baseReward * sqrt(stakeFactor);
-    double before = effectiveStake;
-    effectiveStake += reward;
-    if (effectiveStake > effectiveStakeUpperBound) effectiveStake = effectiveStakeUpperBound;
-    EV << "RSU[" << id << "] effectiveStake get reward: " << before << " -> " << effectiveStake << endl;
-}
-
-void IBDTMStake::getPunishment() {
-    double stakeFactor = double(itsStake) / numVehicles;
-    double p = sqrt(stakeFactor);
-    if (p < 1) p = 1;
-    double penalty = baseReward * p * penaltyFactor;
-    double before = effectiveStake;
-    effectiveStake -= penalty;
-    if (effectiveStake < effectiveStakeLowerBound) effectiveStake = effectiveStakeLowerBound;
-    EV << "RSU[" << id << "] effectiveStake get punishment: " << before << " -> " << effectiveStake << endl;
-}
-
-bool IBDTMStake::isLessLowerBound() {
-    return effectiveStake <= effectiveStakeLowerBound;
-}
-
-IBDTMStakeVoting::IBDTMStakeVoting() {
-    effectiveStakeSum = 0;
-}
-
-bool IBDTMStakeVoting::checkNegtiveVotes() {
-    if (effectiveStakeSum == 0) return false;
-    double negativeVoteStakes = 0;
-    for (auto& p : votes) {
-        if (!p.second) {
-            negativeVoteStakes += effectiveStakes[p.first];
-        }
-    }
-
-    if (negativeVoteStakes / effectiveStakeSum >= 1.0/3) {
-        return true;
-    } else return false;
-}
-
-bool IBDTMStakeVoting::checkPositiveVotes() {
-    if (effectiveStakeSum == 0) return false;
-    double positiveVoteStakes = 0;
-    for (auto& p : votes) {
-        if (p.second) {
-            positiveVoteStakes += effectiveStakes[p.first];
-        }
-    }
-
-    if (positiveVoteStakes / effectiveStakeSum > 2.0/3) {
-        return true;
-    } else return false;
-}
-
 int IBDTMSession::numInitStages() const {
     return std::max(cSimpleModule::numInitStages(), 3);
 }
@@ -123,6 +55,7 @@ void IBDTMSession::initialize(int stage) {
         IBDTMStake::numVehicles = par("numVehicles");
         IBDTMStake::baseReward = par("baseReward");
         IBDTMStake::penaltyFactor = par("penaltyFactor");
+        IBDTMStake::traceBackEpoches = traceBackEpoches;
     }
 
     if (stage == 2) {
@@ -165,13 +98,15 @@ void IBDTMSession::epochTick() {
         // recorder.dumpVehTrustValues(0);
         // recorder.dumpVehTrustValues(10);
         // recorder.dumpVehTrustValues(55);
+        recorder.dumpRSUStakes(35);
+        recorder.dumpRSUStakes(36);
         recorder.setMaliciousVehNum(40);
         recorder.dumpMarkedMalicious();
     }
 
     if (epoch % epochSlots == 0) {
         processVehTrustValue();
-        recorder.record(vehTrustValues, markedMalicious);
+        recorder.record(vehTrustValues, markedMalicious, rsuStakes);
     }
 
     cMessage* msg = new cMessage("epochTick");
@@ -376,10 +311,10 @@ void IBDTMSession::processStakeAdjustment(Block* block, bool result) {
 
         rsuStakes[block->proposer].getReward();
         int recordCnt = block->getRecordCnt();
-        int before = rsuStakes[block->proposer].itsStake;
-        rsuStakes[block->proposer].itsStake += recordCnt;
+        int before = rsuStakes[block->proposer].getITSStake(epoch-1);
+        rsuStakes[block->proposer].addITSStake(epoch, recordCnt);
         if (recordCnt > 0) {
-            EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].itsStake << endl;
+            EV << "RSU[" << block->proposer << "] ITSstake changed: " << before << " -> " << rsuStakes[block->proposer].getITSStake(epoch) << endl;
         }
     } else {
         rsuStakes[block->proposer].getPunishment();

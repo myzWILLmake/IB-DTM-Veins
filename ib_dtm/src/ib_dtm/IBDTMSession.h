@@ -22,38 +22,6 @@
 
 namespace ib_dtm {
 
-class IBDTMStake {
-public:
-    RSUIdx id;
-    int itsStake;
-    double effectiveStake;
-
-    static double initEffectiveStake;
-    static double effectiveStakeUpperBound;
-    static double effectiveStakeLowerBound;
-    static int initITSstake;
-    static int numVehicles;
-    static double baseReward;
-    static double penaltyFactor;
-
-    IBDTMStake();
-    void getReward();
-    void getPunishment();
-    bool isLessLowerBound();
-};
-
-class IBDTMStakeVoting {
-public:
-    HashVal blockHash;
-    double effectiveStakeSum;
-    std::map<RSUIdx, bool> votes;
-    std::map<RSUIdx, int> effectiveStakes;
-
-    IBDTMStakeVoting();
-    bool checkNegtiveVotes();
-    bool checkPositiveVotes();
-};
-
 class IB_DTM_API IBDTMSession : public cSimpleModule {
 protected:
     int numInitStages() const override;

@@ -67,13 +67,19 @@ void RSUInserter::insertRSU() {
     std::random_device rd;
     std::mt19937 g(rd());
     shuffle(rsuIdxs.begin(), rsuIdxs.end(), g);
+
+    vector<int> maliciousRSUIds{36, 37};
+    for (int i=0; i<maliciousNum-maliciousRSUIds.size(); i++) {
+        maliciousRSUIds.push_back(rsuIdxs[i]);
+    }
+
     EV << "malicious RSU:" << endl;
     string s;
     for (int i=0; i<maliciousNum; i++) {
-        s += to_string(rsuIdxs[i]) + " ";
+        s += to_string(maliciousRSUIds[i]) + " ";
     }
     EV << "     " << s << endl;
-
+    
     int idx = 0;
     int xOffset = 25;
     int yOffset = 25;
@@ -83,7 +89,7 @@ void RSUInserter::insertRSU() {
             cModule* mod = nodeType->create("rsu", parentmod, rsunum, idx);
             mod->par("isMalicious") = false;
             for (int i=0; i<maliciousNum; i++) {
-                if (rsuIdxs[i] == idx) {
+                if (maliciousRSUIds[i] == idx) {
                     mod->par("isMalicious") = true;
                     break;
                 }
