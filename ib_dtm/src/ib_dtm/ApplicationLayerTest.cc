@@ -48,6 +48,7 @@ void ApplicationLayerTest::initialize(int stage)
         vehTotalNum = par("vehTotalNum");
         maliciousNum = par("maliciousNum");
         maliciousPoss = par("maliciousPoss");
+        maliciousDelay = par("maliciousDelay");
         srand(((unsigned)time(NULL) + vehID % vehTotalNum));
         isMalicious = vehID % vehTotalNum < maliciousNum;
         if (isMalicious) {
@@ -83,7 +84,7 @@ void ApplicationLayerTest::recordBeaconMsg(int sender, bool isMaliciousMsg) {
         recordData[sender]->isMalicious &= isMaliciousMsg;
     }
 
-    if (isMalicious) {
+    if (simTime() > maliciousDelay && isMalicious) {
         bool origin = recordData[sender]->isMalicious;
         recordData[sender]->isMalicious = !origin;
     }
@@ -172,7 +173,7 @@ void ApplicationLayerTest::handlePositionUpdate(cObject* obj)
         wsm->setSerial(this->msgSerialNo);
         wsm->setSender(this->vehID % vehTotalNum);
         if (this->isMalicious) {
-            if (rand()/double(RAND_MAX) < maliciousPoss) {
+            if (simTime() >= maliciousDelay && rand()/double(RAND_MAX) < maliciousPoss) {
                 wsm->setIsMalicious(true);
             } else {
                 wsm->setIsMalicious(false);

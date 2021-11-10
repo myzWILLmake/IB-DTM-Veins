@@ -25,4 +25,5 @@ simple RSUInserter {
 	    double roadLength = default(100.0);
 		int maliciousNum = default(0);
 		double maliciousPoss = default(1);
+		double maliciousDelay = default(0);
 }

@@ -45,6 +45,7 @@ protected:
     int vehTotalNum;
     int maliciousNum;
     double maliciousPoss;
+    double maliciousDelay;
     bool isMalicious;
 
     // message

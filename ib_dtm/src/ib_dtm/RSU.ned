@@ -32,6 +32,7 @@ module RSU
         string nicType = default("Nic80211p"); // type of network interface card
         bool isMalicious = default(false);
         double maliciousPoss = default(1);
+        double maliciousDelay = default(0);
     gates:
         input rsuInputs[];
         output rsuOutputs[];

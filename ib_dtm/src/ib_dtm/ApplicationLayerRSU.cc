@@ -41,6 +41,7 @@ void ApplicationLayerRSU::initialize(int stage) {
         startService(Channel::sch2, rsuID, "rsu service");
         isMalicious = getParentModule()->par("isMalicious");
         maliciousPoss = getParentModule()->par("maliciousPoss");
+        maliciousDelay = getParentModule()->par("maliciousDelay");
 
         if (isMalicious) {
             findHost()->getDisplayString().setTagArg("i", 1, "red");
@@ -178,7 +179,7 @@ void ApplicationLayerRSU::onVerifyPendingBlock(int sender, string input) {
     string data = to_string(hash) + " ";
     bool doMalicious = false;
     if (isMalicious) {
-        if (rand()/double(RAND_MAX) < maliciousPoss) {
+        if (simTime() > maliciousDelay && rand()/double(RAND_MAX) < maliciousPoss) {
             doMalicious = true;
         }
     }
@@ -317,7 +318,7 @@ void ApplicationLayerRSU::generateTrustRating(bool doMalicious) {
 void ApplicationLayerRSU::generateBlock(int epoch) {
     bool doMalicious = false;
     if (isMalicious) {
-        if (rand()/double(RAND_MAX) < maliciousPoss) {
+        if (simTime() > maliciousDelay && rand()/double(RAND_MAX) < maliciousPoss) {
             doMalicious = true;
         }
     }

@@ -22,6 +22,7 @@ public:
     void recordStakes(map<RSUIdx, IBDTMStake>& rsuStakes);
     void dumpRSUStakes(RSUIdx id);
     void dumpVehTrustValues(VehIdx id);
+    void dumpVehDetected();
     void dumpMarkedMalicious();
 };
 

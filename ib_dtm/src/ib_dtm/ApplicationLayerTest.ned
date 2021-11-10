@@ -31,4 +31,5 @@ simple ApplicationLayerTest extends DemoBaseApplLayer
  		int vehTotalNum = default(20);
  		int maliciousNum = default(1);
         double maliciousPoss = default(1);
+		double maliciousDelay = default(0);
 }

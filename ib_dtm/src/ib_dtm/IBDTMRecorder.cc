@@ -57,6 +57,33 @@ void IBDTMRecorder::dumpRSUStakes(RSUIdx id) {
     rsuFile.close();
 }
 
+void IBDTMRecorder::dumpVehDetected() {
+    string currTime = currentDateTime();
+    ofstream vehDetectedFile("results/veh_" + currTime);
+
+    if (!vehDetectedFile.is_open()) {
+        EV << "Cannot open malicious file!" << endl;
+        return;
+    }
+
+
+    map<VehIdx, int> vehDetectedMap;
+    for (int i=0; i<markedMalicious.size(); i++) {
+        auto& p = markedMalicious[i];
+        for (auto &vp : p) {
+            if (vp.second && vehDetectedMap.find(vp.first) == vehDetectedMap.end()) {
+                vehDetectedMap[vp.first] = i;
+            }
+        }
+    }
+
+    for (auto &p : vehDetectedMap) {
+        vehDetectedFile << p.first << "," << p.second << endl;
+    }
+
+    vehDetectedFile.close();
+}
+
 void IBDTMRecorder::dumpMarkedMalicious() {
     string currTime = currentDateTime();
     ofstream maliciousFile("results/malicious_" + currTime);
@@ -66,7 +93,6 @@ void IBDTMRecorder::dumpMarkedMalicious() {
         return;
     }
 
-    // for (auto &p : markedMalicious) {
     for (int i=0; i<markedMalicious.size(); i++) {
         auto& p = markedMalicious[i];
         int TP = 0;
@@ -81,7 +107,6 @@ void IBDTMRecorder::dumpMarkedMalicious() {
         }
         maliciousFile << i << "," << TP << "," << TN << "," << FP << "," << FN << endl;
     }
-
 
     maliciousFile.close();
 }

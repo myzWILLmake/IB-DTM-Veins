@@ -93,15 +93,16 @@ void IBDTMSession::epochTick() {
     epoch++;
     newCommittee();
 
-    if (epoch == 1000) {
+    if (epoch == (2000/epochTickInterval)) {
         dumpBlockChain();
         // recorder.dumpVehTrustValues(0);
         // recorder.dumpVehTrustValues(10);
         // recorder.dumpVehTrustValues(55);
-        recorder.dumpRSUStakes(35);
-        recorder.dumpRSUStakes(36);
+        // recorder.dumpRSUStakes(35);
+        // recorder.dumpRSUStakes(36);
         recorder.setMaliciousVehNum(40);
         recorder.dumpMarkedMalicious();
+        recorder.dumpVehDetected();
     }
 
     if (epoch % epochSlots == 0) {

@@ -29,6 +29,7 @@ protected:
     bool isMalicious;
     int maliciousVehNum;
     double maliciousPoss;
+    double maliciousDelay;
     int vehTotalNum;
 
     int rsuInputBaseGateId;

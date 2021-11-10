@@ -32,6 +32,7 @@ protected:
     double roadLength;
     int maliciousNum;
     double maliciousPoss;
+    double maliciousDelay;
 };
 
 }

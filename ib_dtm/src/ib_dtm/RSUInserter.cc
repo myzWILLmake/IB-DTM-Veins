@@ -49,6 +49,7 @@ void RSUInserter::initialize(int stage)
     roadLength = par("roadLength");
     maliciousNum = par("maliciousNum");
     maliciousPoss = par("maliciousPoss");
+    maliciousDelay = par("maliciousDelay");
 
     insertRSU();
 }
@@ -63,14 +64,15 @@ void RSUInserter::insertRSU() {
     int rsunum = (xGridSize+1) * (yGridSize + 1);
 
     // vector<int> rsuIdxs{36, 37,38,39,40, 47,48,49,50,51, 58,59,60,61,62, 69,70,71,72,73};
-    vector<int> rsuIdxs;
-    for (int i=0; i<rsunum; i++) rsuIdxs.push_back(i);
+    vector<int> rsuIdxs(rsunum);
+    std::iota(rsuIdxs.begin(), rsuIdxs.end(), 0);
     std::random_device rd;
     std::mt19937 g(rd());
     shuffle(rsuIdxs.begin(), rsuIdxs.end(), g);
 
     vector<int> maliciousRSUIds{36, 37};
-    for (int i=0; i<maliciousNum-maliciousRSUIds.size(); i++) {
+    int maliciousSize = maliciousRSUIds.size();
+    for (int i=0; i<maliciousNum-maliciousSize; i++) {
         maliciousRSUIds.push_back(rsuIdxs[i]);
     }
 
@@ -93,6 +95,7 @@ void RSUInserter::insertRSU() {
                 if (maliciousRSUIds[i] == idx) {
                     mod->par("isMalicious") = true;
                     mod->par("maliciousPoss") = maliciousPoss;
+                    mod->par("maliciousDelay") = maliciousDelay;
                     break;
                 }
             }
