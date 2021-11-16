@@ -11,8 +11,8 @@ doc/neddoc
 /bin/ib_dtm_run
 
 /out
-/data*
 
+examples/**/data*
 examples/**/results
 examples/**/.tkenvrc
 examples/**/.qtenvrc
