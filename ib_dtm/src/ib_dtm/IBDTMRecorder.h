@@ -1,5 +1,6 @@
 #pragma once
 #include "ib_dtm/ib_dtm.h"
+#include "veins/veins.h"
 #include "common.h"
 #include <iostream>
 #include <fstream>

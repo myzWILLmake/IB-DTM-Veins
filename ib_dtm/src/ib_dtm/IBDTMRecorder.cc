@@ -59,7 +59,8 @@ void IBDTMRecorder::dumpRSUStakes(RSUIdx id) {
 
 void IBDTMRecorder::dumpVehDetected() {
     string currTime = currentDateTime();
-    ofstream vehDetectedFile("results/veh_" + currTime);
+    int runnum = getEnvir()->getConfigEx()->getActiveRunNumber();
+    ofstream vehDetectedFile("results/veh_" + currTime + "_" + to_string(runnum));
 
     if (!vehDetectedFile.is_open()) {
         EV << "Cannot open malicious file!" << endl;
