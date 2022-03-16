@@ -101,8 +101,9 @@ void IBDTMSession::epochTick() {
         // recorder.dumpRSUStakes(35);
         // recorder.dumpRSUStakes(36);
         recorder.setMaliciousVehNum(40);
-        // recorder.dumpMarkedMalicious();
-        recorder.dumpVehDetected();
+        recorder.dumpMarkedMalicious();
+        recorder.dumpVehTrustValues();
+        // recorder.dumpVehDetected();
     }
 
     if (epoch % epochSlots == 0) {
@@ -295,8 +296,8 @@ void IBDTMSession::onInvalidBlock(HashVal hash) {
 
 void IBDTMSession::kickoutRSU(RSUIdx id) {
     if (!enableIBDTM) return;
-    EV << "RSU[" << id << "] kicked out from the network." << endl;
-    rsuStatus[id] = false;
+    // EV << "RSU[" << id << "] kicked out from the network." << endl;
+    // rsuStatus[id] = false;
 }
 
 void IBDTMSession::processStakeAdjustment(Block* block, bool result) {

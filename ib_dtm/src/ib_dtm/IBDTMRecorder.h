@@ -22,7 +22,7 @@ public:
     void record(map<VehIdx, int> tvo, map<VehIdx, bool> marked);
     void recordStakes(map<RSUIdx, IBDTMStake>& rsuStakes);
     void dumpRSUStakes(RSUIdx id);
-    void dumpVehTrustValues(VehIdx id);
+    void dumpVehTrustValues();
     void dumpVehDetected();
     void dumpMarkedMalicious();
 };

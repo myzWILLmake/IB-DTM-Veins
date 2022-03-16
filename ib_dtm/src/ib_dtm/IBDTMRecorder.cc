@@ -25,9 +25,10 @@ void IBDTMRecorder::recordStakes(map<RSUIdx, IBDTMStake>& rsuStakes) {
     }
 }
 
-void IBDTMRecorder::dumpVehTrustValues(VehIdx id) {
+void IBDTMRecorder::dumpVehTrustValues() {
     string currTime = currentDateTime();
-    ofstream tvoFile("results/tvo_" + to_string(id) + "_" + currTime);
+    int runnum = getEnvir()->getConfigEx()->getActiveRunNumber();
+    ofstream tvoFile("results/tvo" + currTime + "_" + to_string(runnum));
 
     if (!tvoFile.is_open()) {
         EV << "Cannot open tvo file!" << endl;
@@ -35,7 +36,10 @@ void IBDTMRecorder::dumpVehTrustValues(VehIdx id) {
     }
 
     for (int i=0; i<vehTrustValues.size(); i++) {
-        tvoFile << i << "," << vehTrustValues[i][id] << endl;
+        tvoFile << "epoch" << i << endl;
+        for (auto p : vehTrustValues[i]) {
+            tvoFile << p.first << ":" << p.second << endl;
+        } 
     }
 
     tvoFile.close();
@@ -87,7 +91,8 @@ void IBDTMRecorder::dumpVehDetected() {
 
 void IBDTMRecorder::dumpMarkedMalicious() {
     string currTime = currentDateTime();
-    ofstream maliciousFile("results/malicious_" + currTime);
+    int runnum = getEnvir()->getConfigEx()->getActiveRunNumber();
+    ofstream maliciousFile("results/malicious_" + currTime + "_" + to_string(runnum));
 
     if (!maliciousFile.is_open()) {
         EV << "Cannot open malicious file!" << endl;
