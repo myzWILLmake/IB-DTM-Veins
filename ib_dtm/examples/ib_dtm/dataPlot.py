@@ -9,8 +9,8 @@ import math
 # args = ['25_100', '25_150', '10_150', '25_200', '25_250']
 # args_axis = ['25*4=100', '25*6=150', '10*15=150', '25*8=200', '25*10=250']
 directory = 'data'
-args = ['10_100_300', '10_150_300', '10_200_500']
-args_axis = ['10slots 10epochs', '10slots 15epochs', '10slots 20epochs']
+args = ['10_200_500', '20_200_500', '25_200_500']
+args_axis = ['10slots 20epochs', '20slots 10epochs', '25slots 8epochs']
 data = {}
 error_stat = {}
 mean_stat = {}
@@ -84,7 +84,7 @@ for arg in args:
     npdata = np.array(data[arg])
     plot_data.append(npdata)
 
-fig, ax = plt.subplots(figsize = (10, 7))
+fig, ax = plt.subplots(figsize = (6, 4))
 parts = ax.violinplot(
     plot_data, showmeans=False, showmedians=False, 
     showextrema=False)
